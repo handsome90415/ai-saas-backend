@@ -123,6 +123,12 @@ async def generate_product_content(
         "casual": "輕鬆、友善的口語風格",
         "creative": "有創意、吸睛的行銷文案",
         "humorous": "幽默、有趣的風格",
+        "persuasive": "說服力強，強調價值和好處",
+        "luxury": "奢華、高端的語氣",
+        "emotional": "觸動情感，引起共鳴",
+        "urgent": "製造緊迫感，促使立即行動",
+        "storytelling": "用故事的方式敘述",
+        "trendy": "潮流、網紅風格，使用流行用語",
     }
 
     try:

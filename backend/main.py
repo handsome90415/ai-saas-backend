@@ -336,7 +336,15 @@ async def generate_text(
             "professional": "專業、正式的商業語氣",
             "casual": "輕鬆、友善的口語風格",
             "creative": "有創意、吸睛的行銷文案",
-            "educational": "教學、知識分享的語氣",
+            "humorous": "幽默、有趣的風格，讓讀者會心一笑",
+            "educational": "教學、知識分享的語氣，清晰易懂",
+            "persuasive": "說服力強，強調價值和好處，引導行動",
+            "luxury": "奢華、高端的語氣，強調品質和獨特性",
+            "emotional": "觸動情感，引起共鳴，感人至深",
+            "urgent": "製造緊迫感，強調限時限量，促使立即行動",
+            "storytelling": "用故事的方式敘述，引人入勝",
+            "minimalist": "簡約、優雅，少即是多",
+            "trendy": "潮流、網紅風格，使用流行用語和標籤",
         }
         platform_context = {
             "instagram": "Instagram 貼文，需要吸引人的標題和hashtag",
@@ -344,6 +352,8 @@ async def generate_text(
             "twitter": "Twitter/X 貼文，簡潔有力",
             "linkedin": "LinkedIn 專業文章",
             "blog": "部落格文章，SEO 友善",
+            "tiktok": "TikTok 短影音腳本，創意吸睛",
+            "youtube": "YouTube 影片腳本，適合長內容",
             "general": "通用社群內容",
         }
         system_prompt = f"""你是一個專業的內容創作者。

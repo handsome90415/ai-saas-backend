@@ -22,6 +22,7 @@ export function TextGenerator({ onResult }: Props) {
   const [prompt, setPrompt] = useState('')
   const [style, setStyle] = useState('professional')
   const [platform, setPlatform] = useState('instagram')
+  const [length, setLength] = useState('medium')
   const [provider, setProvider] = useState('')
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
@@ -34,7 +35,7 @@ export function TextGenerator({ onResult }: Props) {
         prompt,
         style,
         platform,
-        length: 'medium',
+        length,
         provider: provider || undefined,
       })
       onResult(data)
@@ -60,20 +61,37 @@ export function TextGenerator({ onResult }: Props) {
         placeholder="例如：推銷一款新的咖啡機，強調它能快速沖泡高品質咖啡..."
       />
 
-      <div className="grid grid-cols-2 gap-4">
-        <Select label="語氣風格" value={style} onChange={e => setStyle(e.target.value)}>
-          <option value="professional" className="text-gray-900">專業正式</option>
-          <option value="casual" className="text-gray-900">輕鬆友善</option>
-          <option value="creative" className="text-gray-900">創意吸睛</option>
-          <option value="educational" className="text-gray-900">教學知識</option>
-        </Select>
+      <Select label="語氣風格" value={style} onChange={e => setStyle(e.target.value)}>
+        <option value="professional" className="text-gray-900">🏢 專業正式</option>
+        <option value="casual" className="text-gray-900">☕ 輕鬆友善</option>
+        <option value="creative" className="text-gray-900">🎨 創意吸睛</option>
+        <option value="humorous" className="text-gray-900">😄 幽默風趣</option>
+        <option value="educational" className="text-gray-900">📚 教學知識</option>
+        <option value="persuasive" className="text-gray-900">🎯 說服力強</option>
+        <option value="luxury" className="text-gray-900">💎 奢華高端</option>
+        <option value="emotional" className="text-gray-900">❤️ 情感共鳴</option>
+        <option value="urgent" className="text-gray-900">⚡ 緊迫感</option>
+        <option value="storytelling" className="text-gray-900">📖 故事敘述</option>
+        <option value="minimalist" className="text-gray-900">✨ 簡約優雅</option>
+        <option value="trendy" className="text-gray-900">🔥 潮流網紅</option>
+      </Select>
 
+      <div className="grid grid-cols-2 gap-4">
         <Select label="目標平台" value={platform} onChange={e => setPlatform(e.target.value)}>
           <option value="instagram" className="text-gray-900">Instagram</option>
           <option value="facebook" className="text-gray-900">Facebook</option>
           <option value="twitter" className="text-gray-900">Twitter/X</option>
           <option value="linkedin" className="text-gray-900">LinkedIn</option>
           <option value="blog" className="text-gray-900">部落格</option>
+          <option value="tiktok" className="text-gray-900">TikTok</option>
+          <option value="youtube" className="text-gray-900">YouTube</option>
+          <option value="general" className="text-gray-900">通用</option>
+        </Select>
+
+        <Select label="內容長度" value={length} onChange={e => setLength(e.target.value)}>
+          <option value="short" className="text-gray-900">簡短 (50-100字)</option>
+          <option value="medium" className="text-gray-900">中等 (150-250字)</option>
+          <option value="long" className="text-gray-900">詳細 (300-500字)</option>
         </Select>
       </div>
 

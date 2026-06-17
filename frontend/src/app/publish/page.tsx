@@ -106,6 +106,12 @@ const styles = [
   { id: 'casual', name: '輕鬆休閒', icon: '☕', color: 'from-amber-500 to-orange-500' },
   { id: 'creative', name: '創意吸睛', icon: '🎨', color: 'from-purple-500 to-pink-500' },
   { id: 'humorous', name: '幽默風趣', icon: '😄', color: 'from-green-500 to-emerald-500' },
+  { id: 'persuasive', name: '說服力強', icon: '🎯', color: 'from-red-500 to-rose-500' },
+  { id: 'luxury', name: '奢華高端', icon: '💎', color: 'from-yellow-500 to-amber-500' },
+  { id: 'emotional', name: '情感共鳴', icon: '❤️', color: 'from-pink-500 to-rose-500' },
+  { id: 'urgent', name: '緊迫感', icon: '⚡', color: 'from-orange-500 to-red-500' },
+  { id: 'storytelling', name: '故事敘述', icon: '📖', color: 'from-indigo-500 to-blue-500' },
+  { id: 'trendy', name: '潮流網紅', icon: '🔥', color: 'from-fuchsia-500 to-pink-500' },
 ]
 
 const lengths = [
