@@ -6,6 +6,24 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 
+const firebaseErrors: Record<string, string> = {
+  'auth/user-not-found': '此帳號尚未註冊',
+  'auth/wrong-password': '密碼錯誤',
+  'auth/invalid-email': 'Email 格式不正確',
+  'auth/user-disabled': '此帳號已被停用',
+  'auth/too-many-requests': '嘗試次數過多，請稍後再試',
+  'auth/invalid-credential': '帳號或密碼錯誤',
+  'auth/popup-closed-by-user': '已取消登入',
+  'auth/network-request-failed': '網路連線失敗，請檢查網路',
+  'auth/operation-not-allowed': '此登入方式尚未啟用，請到 Firebase Console 啟用',
+}
+
+function firebaseErrorMessage(error: any): string | null {
+  if (error?.code && firebaseErrors[error.code]) return firebaseErrors[error.code]
+  if (error?.message?.includes('Firebase')) return error.message
+  return null
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -23,7 +41,8 @@ export default function LoginPage() {
       toast('登入成功', 'success')
       router.push('/')
     } catch (error: any) {
-      toast(error.message || '登入失敗', 'error')
+      const msg = firebaseErrorMessage(error) || error.message || '登入失敗'
+      toast(msg, 'error')
     }
     setLoading(false)
   }
@@ -36,7 +55,8 @@ export default function LoginPage() {
       router.push('/')
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
-        toast(error.message || 'Google 登入失敗', 'error')
+        const msg = firebaseErrorMessage(error) || error.message || 'Google 登入失敗'
+        toast(msg, 'error')
       }
     }
     setGoogleLoading(false)

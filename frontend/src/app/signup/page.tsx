@@ -6,6 +6,22 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 
+const firebaseErrors: Record<string, string> = {
+  'auth/email-already-in-use': '此 Email 已被註冊',
+  'auth/invalid-email': 'Email 格式不正確',
+  'auth/weak-password': '密碼至少需要 6 個字元',
+  'auth/operation-not-allowed': '此註冊方式尚未啟用，請到 Firebase Console 啟用',
+  'auth/too-many-requests': '嘗試次數過多，請稍後再試',
+  'auth/network-request-failed': '網路連線失敗，請檢查網路',
+  'auth/popup-closed-by-user': '已取消註冊',
+}
+
+function firebaseErrorMessage(error: any): string | null {
+  if (error?.code && firebaseErrors[error.code]) return firebaseErrors[error.code]
+  if (error?.message?.includes('Firebase')) return error.message
+  return null
+}
+
 export default function SignupPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -24,7 +40,8 @@ export default function SignupPage() {
       toast('註冊成功', 'success')
       router.push('/')
     } catch (error: any) {
-      toast(error.message || '註冊失敗', 'error')
+      const msg = firebaseErrorMessage(error) || error.message || '註冊失敗'
+      toast(msg, 'error')
     }
     setLoading(false)
   }
@@ -37,7 +54,8 @@ export default function SignupPage() {
       router.push('/')
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
-        toast(error.message || 'Google 登入失敗', 'error')
+        const msg = firebaseErrorMessage(error) || error.message || 'Google 登入失敗'
+        toast(msg, 'error')
       }
     }
     setGoogleLoading(false)

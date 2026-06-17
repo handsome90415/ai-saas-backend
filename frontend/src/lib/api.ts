@@ -14,6 +14,22 @@ function getToken(): string | null {
   return localStorage.getItem('token')
 }
 
+function extractError(data: any, status: number): string {
+  if (!data || !data.detail) return `請求失敗 (${status})`
+  if (typeof data.detail === 'string') return data.detail
+  if (Array.isArray(data.detail)) {
+    return data.detail.map((d: any) => d.msg || d.message || String(d)).join(', ')
+  }
+  return `請求失敗 (${status})`
+}
+
+function handleAuthError(status: number) {
+  if (status === 401 && typeof window !== 'undefined') {
+    localStorage.removeItem('token')
+    window.location.href = '/login'
+  }
+}
+
 export async function apiGet<T = any>(endpoint: string): Promise<T> {
   const token = getToken()
   const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -23,7 +39,8 @@ export async function apiGet<T = any>(endpoint: string): Promise<T> {
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
-    throw new ApiError(data.detail || `請求失敗 (${res.status})`, res.status)
+    handleAuthError(res.status)
+    throw new ApiError(extractError(data, res.status), res.status)
   }
   return res.json()
 }
@@ -40,7 +57,8 @@ export async function apiPost<T = any>(endpoint: string, body?: any): Promise<T>
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
-    throw new ApiError(data.detail || `請求失敗 (${res.status})`, res.status)
+    handleAuthError(res.status)
+    throw new ApiError(extractError(data, res.status), res.status)
   }
   return res.json()
 }
@@ -57,7 +75,8 @@ export async function apiPut<T = any>(endpoint: string, body?: any): Promise<T> 
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
-    throw new ApiError(data.detail || `請求失敗 (${res.status})`, res.status)
+    handleAuthError(res.status)
+    throw new ApiError(extractError(data, res.status), res.status)
   }
   return res.json()
 }
@@ -72,7 +91,8 @@ export async function apiDelete<T = any>(endpoint: string): Promise<T> {
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
-    throw new ApiError(data.detail || `請求失敗 (${res.status})`, res.status)
+    handleAuthError(res.status)
+    throw new ApiError(extractError(data, res.status), res.status)
   }
   return res.json()
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { HeroSection } from '@/components/layout/HeroSection'
@@ -12,10 +12,18 @@ import { TextResult } from '@/components/generator/TextResult'
 import { ImageResult } from '@/components/generator/ImageResult'
 import { PricingCards } from '@/components/pricing/PricingCards'
 import { SkeletonText, SkeletonImage } from '@/components/ui/Skeleton'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Home() {
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const { isAuthenticated } = useAuth()
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setResult(null)
+    }
+  }, [isAuthenticated])
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
