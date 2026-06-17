@@ -18,10 +18,12 @@ const firebaseErrors: Record<string, string> = {
   'auth/operation-not-allowed': '此登入方式尚未啟用，請到 Firebase Console 啟用',
 }
 
-function firebaseErrorMessage(error: any): string | null {
+function getErrorMessage(error: any): string {
   if (error?.code && firebaseErrors[error.code]) return firebaseErrors[error.code]
-  if (error?.message?.includes('Firebase')) return error.message
-  return null
+  if (typeof error?.message === 'string' && error.message.length > 0) return error.message
+  if (typeof error?.detail === 'string') return error.detail
+  if (Array.isArray(error?.detail)) return error.detail.map((d: any) => d.msg || String(d)).join(', ')
+  return '登入失敗，請檢查帳號密碼'
 }
 
 export default function LoginPage() {
@@ -29,36 +31,38 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [error, setError] = useState('')
   const { login, loginWithGoogle } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
     setLoading(true)
     try {
       await login(email, password)
       toast('登入成功', 'success')
       router.push('/')
-    } catch (error: any) {
-      const msg = firebaseErrorMessage(error)
-        || error?.message
-        || error?.detail
-        || '登入失敗，請檢查帳號密碼'
+    } catch (err: any) {
+      const msg = getErrorMessage(err)
+      setError(msg)
       toast(msg, 'error')
     }
     setLoading(false)
   }
 
   const handleGoogle = async () => {
+    setError('')
     setGoogleLoading(true)
     try {
       await loginWithGoogle()
       toast('Google 登入成功', 'success')
       router.push('/')
-    } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        const msg = firebaseErrorMessage(error) || error.message || 'Google 登入失敗'
+    } catch (err: any) {
+      if (err?.code !== 'auth/popup-closed-by-user') {
+        const msg = getErrorMessage(err)
+        setError(msg)
         toast(msg, 'error')
       }
     }
@@ -77,6 +81,12 @@ export default function LoginPage() {
 
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 space-y-4">
           <h2 className="text-2xl font-bold text-white text-center mb-4">登入</h2>
+
+          {error && (
+            <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
           <button
             type="button"

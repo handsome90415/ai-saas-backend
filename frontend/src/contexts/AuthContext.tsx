@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { apiGet, apiPost } from '@/lib/api'
 import {
   loginWithGoogle as fbLoginWithGoogle,
@@ -62,11 +62,11 @@ async function syncFirebaseUser(firebaseUser: any): Promise<User> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const loggingOut = { current: false }
+  const loggingOutRef = useRef(false)
 
   useEffect(() => {
     const unsubscribe = onAuthChange(async (firebaseUser) => {
-      if (loggingOut.current) return
+      if (loggingOutRef.current) return
       if (firebaseUser) {
         try {
           const userData = await syncFirebaseUser(firebaseUser)
@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(async () => {
-    loggingOut.current = true
+    loggingOutRef.current = true
     localStorage.removeItem('token')
     setUser(null)
     try {

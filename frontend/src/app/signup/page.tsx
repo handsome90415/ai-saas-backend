@@ -16,10 +16,12 @@ const firebaseErrors: Record<string, string> = {
   'auth/popup-closed-by-user': '已取消註冊',
 }
 
-function firebaseErrorMessage(error: any): string | null {
+function getErrorMessage(error: any): string {
   if (error?.code && firebaseErrors[error.code]) return firebaseErrors[error.code]
-  if (error?.message?.includes('Firebase')) return error.message
-  return null
+  if (typeof error?.message === 'string' && error.message.length > 0) return error.message
+  if (typeof error?.detail === 'string') return error.detail
+  if (Array.isArray(error?.detail)) return error.detail.map((d: any) => d.msg || String(d)).join(', ')
+  return '註冊失敗，請稍後再試'
 }
 
 export default function SignupPage() {
@@ -28,36 +30,38 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [error, setError] = useState('')
   const { signup, loginWithGoogle } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
     setLoading(true)
     try {
       await signup(email, password, name || undefined)
       toast('註冊成功', 'success')
       router.push('/')
-    } catch (error: any) {
-      const msg = firebaseErrorMessage(error)
-        || error?.message
-        || error?.detail
-        || '註冊失敗，請稍後再試'
+    } catch (err: any) {
+      const msg = getErrorMessage(err)
+      setError(msg)
       toast(msg, 'error')
     }
     setLoading(false)
   }
 
   const handleGoogle = async () => {
+    setError('')
     setGoogleLoading(true)
     try {
       await loginWithGoogle()
-      toast('Google 登入成功', 'success')
+      toast('Google 註冊成功', 'success')
       router.push('/')
-    } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        const msg = firebaseErrorMessage(error) || error.message || 'Google 登入失敗'
+    } catch (err: any) {
+      if (err?.code !== 'auth/popup-closed-by-user') {
+        const msg = getErrorMessage(err)
+        setError(msg)
         toast(msg, 'error')
       }
     }
@@ -76,6 +80,12 @@ export default function SignupPage() {
 
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 space-y-4">
           <h2 className="text-2xl font-bold text-white text-center mb-4">註冊</h2>
+
+          {error && (
+            <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
           <button
             type="button"
