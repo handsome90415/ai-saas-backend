@@ -41,7 +41,7 @@ app.include_router(product.router)
 app.include_router(oauth.router)
 app.include_router(admin.router)
 
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 
 # ── Auth ──────────────────────────────────────────────
