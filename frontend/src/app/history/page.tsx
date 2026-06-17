@@ -27,6 +27,7 @@ export default function HistoryPage() {
   const [total, setTotal] = useState(0)
   const [filter, setFilter] = useState<string>('')
   const [search, setSearch] = useState<string>('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const limit = 10
 
   useEffect(() => {
@@ -69,6 +70,37 @@ export default function HistoryPage() {
     text: '文案生成',
     image: '圖片生成',
     product_image: '產品圖片',
+  }
+
+  const renderResult = (gen: Generation) => {
+    if (gen.type === 'text' && gen.result) {
+      return (
+        <div className="space-y-3">
+          {gen.result.title && <h4 className="text-lg font-bold text-purple-300">{gen.result.title}</h4>}
+          {gen.result.content && <p className="text-gray-200 whitespace-pre-wrap">{gen.result.content}</p>}
+          {gen.result.hashtags && gen.result.hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {gen.result.hashtags.map((tag: string, i: number) => (
+                <span key={i} className="text-sm text-purple-400">#{tag}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+    }
+    if ((gen.type === 'image' || gen.type === 'product_image') && gen.result) {
+      return (
+        <div className="space-y-3">
+          {gen.result.image_url && (
+            <img src={gen.result.image_url} alt={gen.prompt} className="max-w-md rounded-lg" />
+          )}
+          {gen.result.revised_prompt && (
+            <p className="text-sm text-gray-400">{gen.result.revised_prompt}</p>
+          )}
+        </div>
+      )
+    }
+    return <p className="text-gray-400">無法顯示結果</p>
   }
 
   const totalPages = Math.ceil(total / limit)
@@ -137,21 +169,38 @@ export default function HistoryPage() {
             {generations.map(gen => (
               <div
                 key={gen.id}
-                className="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10 flex items-center gap-4"
+                className="bg-white/5 backdrop-blur rounded-xl border border-white/10 overflow-hidden"
               >
-                <span className="px-3 py-1 bg-purple-600/50 text-white rounded-full text-xs whitespace-nowrap">
-                  {typeLabels[gen.type] || gen.type}
-                </span>
-                <p className="text-white flex-1 truncate">{gen.prompt}</p>
-                <span className="text-gray-400 text-sm whitespace-nowrap">
-                  {gen.created_at ? new Date(gen.created_at).toLocaleDateString('zh-TW') : ''}
-                </span>
-                <button
-                  onClick={() => handleDelete(gen.id)}
-                  className="text-red-400 hover:text-red-300 text-sm"
+                <div
+                  className="p-4 flex items-center gap-4 cursor-pointer hover:bg-white/5 transition"
+                  onClick={() => setExpandedId(expandedId === gen.id ? null : gen.id)}
                 >
-                  刪除
-                </button>
+                  <span className="px-3 py-1 bg-purple-600/50 text-white rounded-full text-xs whitespace-nowrap">
+                    {typeLabels[gen.type] || gen.type}
+                  </span>
+                  <p className="text-white flex-1 truncate">{gen.prompt}</p>
+                  <span className="text-gray-400 text-sm whitespace-nowrap">
+                    {gen.created_at ? new Date(gen.created_at).toLocaleDateString('zh-TW') : ''}
+                  </span>
+                  <svg
+                    className={`w-5 h-5 text-gray-400 transition-transform ${expandedId === gen.id ? 'rotate-180' : ''}`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(gen.id) }}
+                    className="text-red-400 hover:text-red-300 text-sm"
+                  >
+                    刪除
+                  </button>
+                </div>
+                {expandedId === gen.id && (
+                  <div className="px-4 pb-4 pt-2 border-t border-white/10 bg-white/5">
+                    <p className="text-xs text-gray-500 mb-2">提示詞：{gen.prompt}</p>
+                    {renderResult(gen)}
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { apiPost } from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { Textarea } from '@/components/ui/Textarea'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
@@ -21,8 +22,10 @@ export function TextGenerator({ onResult }: Props) {
   const [prompt, setPrompt] = useState('')
   const [style, setStyle] = useState('professional')
   const [platform, setPlatform] = useState('instagram')
+  const [provider, setProvider] = useState('')
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+  const { user } = useAuth()
 
   const generate = async () => {
     setLoading(true)
@@ -32,6 +35,7 @@ export function TextGenerator({ onResult }: Props) {
         style,
         platform,
         length: 'medium',
+        provider: provider || undefined,
       })
       onResult(data)
     } catch (error: any) {
@@ -39,6 +43,12 @@ export function TextGenerator({ onResult }: Props) {
     }
     setLoading(false)
   }
+
+  const availableProviders = [
+    user?.has_api_key && { id: 'openai', name: 'OpenAI' },
+    user?.has_gemini_key && { id: 'gemini', name: 'Gemini' },
+    user?.has_claude_key && { id: 'claude', name: 'Claude' },
+  ].filter(Boolean) as { id: string; name: string }[]
 
   return (
     <div className="space-y-4">
@@ -66,6 +76,15 @@ export function TextGenerator({ onResult }: Props) {
           <option value="blog" className="text-gray-900">部落格</option>
         </Select>
       </div>
+
+      {availableProviders.length > 1 && (
+        <Select label="AI 供應商" value={provider} onChange={e => setProvider(e.target.value)}>
+          <option value="" className="text-gray-900">使用預設</option>
+          {availableProviders.map(p => (
+            <option key={p.id} value={p.id} className="text-gray-900">{p.name}</option>
+          ))}
+        </Select>
+      )}
 
       <Button
         onClick={generate}

@@ -21,6 +21,35 @@ def get_user_openai_client(api_key: str) -> OpenAI:
     return OpenAI(api_key=api_key)
 
 
+def get_provider_api_key(user: User, provider: str) -> tuple[str, str]:
+    """Returns (api_key, provider_name) for the user's preferred or specified provider."""
+    if provider:
+        if provider == "openai" and user.openai_api_key:
+            return user.openai_api_key, "openai"
+        if provider == "gemini" and user.gemini_api_key:
+            return user.gemini_api_key, "gemini"
+        if provider == "claude" and user.claude_api_key:
+            return user.claude_api_key, "claude"
+        raise HTTPException(status_code=400, detail=f"未設定 {provider} API Key")
+
+    preferred = getattr(user, 'preferred_provider', 'openai')
+    if preferred == "openai" and user.openai_api_key:
+        return user.openai_api_key, "openai"
+    if preferred == "gemini" and user.gemini_api_key:
+        return user.gemini_api_key, "gemini"
+    if preferred == "claude" and user.claude_api_key:
+        return user.claude_api_key, "claude"
+
+    if user.openai_api_key:
+        return user.openai_api_key, "openai"
+    if user.gemini_api_key:
+        return user.gemini_api_key, "gemini"
+    if user.claude_api_key:
+        return user.claude_api_key, "claude"
+
+    raise HTTPException(status_code=400, detail="請先在設定中新增至少一個 AI API Key")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
@@ -61,10 +90,23 @@ class UserResponse(BaseModel):
     name: Optional[str]
     plan: str
     has_api_key: bool = False
+    has_gemini_key: bool = False
+    has_claude_key: bool = False
+    preferred_provider: str = "openai"
 
 class AuthResponse(BaseModel):
     user: UserResponse
     access_token: str
+
+
+def user_response(user: User) -> UserResponse:
+    return UserResponse(
+        id=user.id, email=user.email, name=user.name, plan=user.plan,
+        has_api_key=bool(user.openai_api_key),
+        has_gemini_key=bool(user.gemini_api_key),
+        has_claude_key=bool(user.claude_api_key),
+        preferred_provider=getattr(user, 'preferred_provider', 'openai'),
+    )
 
 
 @app.post("/api/auth/register", response_model=AuthResponse)
@@ -78,7 +120,7 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(user)
     token = create_access_token(user.id)
-    return AuthResponse(user=UserResponse(**user.__dict__, has_api_key=bool(user.openai_api_key)), access_token=token)
+    return AuthResponse(user=user_response(user), access_token=token)
 
 
 @app.post("/api/auth/login", response_model=AuthResponse)
@@ -88,12 +130,12 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Email 或密碼錯誤")
     token = create_access_token(user.id)
-    return AuthResponse(user=UserResponse(**user.__dict__, has_api_key=bool(user.openai_api_key)), access_token=token)
+    return AuthResponse(user=user_response(user), access_token=token)
 
 
 @app.get("/api/auth/me", response_model=UserResponse)
 async def get_me(user: User = Depends(get_current_user)):
-    return UserResponse(**user.__dict__, has_api_key=bool(user.openai_api_key))
+    return user_response(user)
 
 
 class UpdateProfileRequest(BaseModel):
@@ -106,6 +148,13 @@ class ChangePasswordRequest(BaseModel):
 class UpdateApiKeyRequest(BaseModel):
     api_key: str
 
+class UpdateProviderKeyRequest(BaseModel):
+    provider: str  # "openai", "gemini", "claude"
+    api_key: str
+
+class UpdatePreferredProviderRequest(BaseModel):
+    provider: str
+
 
 @app.put("/api/auth/profile", response_model=UserResponse)
 async def update_profile(
@@ -117,7 +166,7 @@ async def update_profile(
         user.name = req.name
         await db.commit()
         await db.refresh(user)
-    return UserResponse(**user.__dict__, has_api_key=bool(user.openai_api_key))
+    return user_response(user)
 
 
 @app.put("/api/auth/password")
@@ -146,7 +195,7 @@ async def update_api_key(
     user.openai_api_key = req.api_key
     await db.commit()
     await db.refresh(user)
-    return UserResponse(**user.__dict__, has_api_key=bool(user.openai_api_key))
+    return user_response(user)
 
 
 @app.delete("/api/auth/api-key")
@@ -159,6 +208,63 @@ async def delete_api_key(
     return {"success": True, "message": "API Key 已刪除"}
 
 
+@app.put("/api/auth/provider-key", response_model=UserResponse)
+async def update_provider_key(
+    req: UpdateProviderKeyRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if req.provider == "openai":
+        if not req.api_key.startswith("sk-"):
+            raise HTTPException(status_code=400, detail="OpenAI API Key 格式不正確，需以 sk- 開頭")
+        user.openai_api_key = req.api_key
+    elif req.provider == "gemini":
+        if not req.api_key.startswith("AIza"):
+            raise HTTPException(status_code=400, detail="Google Gemini API Key 格式不正確，需以 AIza 開頭")
+        user.gemini_api_key = req.api_key
+    elif req.provider == "claude":
+        if not req.api_key.startswith("sk-ant-"):
+            raise HTTPException(status_code=400, detail="Claude API Key 格式不正確，需以 sk-ant- 開頭")
+        user.claude_api_key = req.api_key
+    else:
+        raise HTTPException(status_code=400, detail="不支援的 AI 供應商")
+    await db.commit()
+    await db.refresh(user)
+    return user_response(user)
+
+
+@app.delete("/api/auth/provider-key/{provider}")
+async def delete_provider_key(
+    provider: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if provider == "openai":
+        user.openai_api_key = None
+    elif provider == "gemini":
+        user.gemini_api_key = None
+    elif provider == "claude":
+        user.claude_api_key = None
+    else:
+        raise HTTPException(status_code=400, detail="不支援的 AI 供應商")
+    await db.commit()
+    return {"success": True, "message": "API Key 已刪除"}
+
+
+@app.put("/api/auth/preferred-provider", response_model=UserResponse)
+async def update_preferred_provider(
+    req: UpdatePreferredProviderRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if req.provider not in ("openai", "gemini", "claude"):
+        raise HTTPException(status_code=400, detail="不支援的 AI 供應商")
+    user.preferred_provider = req.provider
+    await db.commit()
+    await db.refresh(user)
+    return user_response(user)
+
+
 # ── Generation ────────────────────────────────────────
 
 class TextGenerationRequest(BaseModel):
@@ -166,11 +272,13 @@ class TextGenerationRequest(BaseModel):
     style: Optional[str] = "professional"
     platform: Optional[str] = "general"
     length: Optional[str] = "medium"
+    provider: Optional[str] = None
 
 class ImageGenerationRequest(BaseModel):
     prompt: str
     style: Optional[str] = "realistic"
     size: Optional[str] = "1024x1024"
+    provider: Optional[str] = None
 
 class TextGenerationResponse(BaseModel):
     content: str
@@ -193,10 +301,8 @@ async def generate_text(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if not user.openai_api_key:
-        raise HTTPException(status_code=400, detail="請先在設定中新增 OpenAI API Key")
+    api_key, provider = get_provider_api_key(user, request.provider)
     try:
-        openai_client = get_user_openai_client(user.openai_api_key)
         style_prompts = {
             "professional": "專業、正式的商業語氣",
             "casual": "輕鬆、友善的口語風格",
@@ -224,16 +330,41 @@ async def generate_text(
 
 內容長度: {request.length}"""
 
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": request.prompt},
-            ],
-            response_format={"type": "json_object"},
-        )
+        if provider == "openai":
+            client = OpenAI(api_key=api_key)
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": request.prompt},
+                ],
+                response_format={"type": "json_object"},
+            )
+            result = json.loads(response.choices[0].message.content)
 
-        result = json.loads(response.choices[0].message.content)
+        elif provider == "gemini":
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            response = model.generate_content(
+                f"{system_prompt}\n\n用戶需求: {request.prompt}",
+                generation_config=genai.GenerationConfig(response_mime_type="application/json"),
+            )
+            result = json.loads(response.text)
+
+        elif provider == "claude":
+            import anthropic
+            client = anthropic.Anthropic(api_key=api_key)
+            response = client.messages.create(
+                model="claude-3-haiku-20240307",
+                max_tokens=1024,
+                system=system_prompt,
+                messages=[{"role": "user", "content": request.prompt}],
+            )
+            result = json.loads(response.content[0].text)
+
+        else:
+            raise HTTPException(status_code=400, detail="不支援的 AI 供應商")
 
         gen = Generation(user_id=user.id, type="text", prompt=request.prompt, result=json.dumps(result, ensure_ascii=False))
         db.add(gen)
@@ -241,6 +372,8 @@ async def generate_text(
         await db.commit()
 
         return TextGenerationResponse(**result)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -251,21 +384,36 @@ async def generate_image(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if not user.openai_api_key:
-        raise HTTPException(status_code=400, detail="請先在設定中新增 OpenAI API Key")
+    api_key, provider = get_provider_api_key(user, request.provider)
     try:
-        openai_client = get_user_openai_client(user.openai_api_key)
-        response = openai_client.images.generate(
-            model="dall-e-3",
-            prompt=request.prompt,
-            size=request.size,
-            quality="standard",
-            n=1,
-        )
-        result = {
-            "image_url": response.data[0].url,
-            "revised_prompt": response.data[0].revised_prompt,
-        }
+        if provider == "openai":
+            client = OpenAI(api_key=api_key)
+            response = client.images.generate(
+                model="dall-e-3",
+                prompt=request.prompt,
+                size=request.size,
+                quality="standard",
+                n=1,
+            )
+            result = {
+                "image_url": response.data[0].url,
+                "revised_prompt": response.data[0].revised_prompt,
+            }
+        elif provider == "gemini":
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            response = model.generate_content(
+                f"Generate an image: {request.prompt}",
+            )
+            result = {
+                "image_url": "",
+                "revised_prompt": response.text,
+            }
+        elif provider == "claude":
+            raise HTTPException(status_code=400, detail="Claude 目前不支援圖片生成，請使用 OpenAI")
+        else:
+            raise HTTPException(status_code=400, detail="不支援的 AI 供應商")
 
         gen = Generation(user_id=user.id, type="image", prompt=request.prompt, result=json.dumps(result, ensure_ascii=False))
         db.add(gen)
@@ -273,6 +421,8 @@ async def generate_image(
         await db.commit()
 
         return ImageGenerationResponse(**result)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -283,25 +433,29 @@ async def generate_product_image(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if not user.openai_api_key:
-        raise HTTPException(status_code=400, detail="請先在設定中新增 OpenAI API Key")
+    api_key, provider = get_provider_api_key(user, request.provider)
     try:
-        openai_client = get_user_openai_client(user.openai_api_key)
         enhanced_prompt = f"""Professional e-commerce product photo:
         {request.prompt}
         Style: Clean, white background, studio lighting, high quality product photography"""
 
-        response = openai_client.images.generate(
-            model="dall-e-3",
-            prompt=enhanced_prompt,
-            size="1024x1024",
-            quality="hd",
-            n=1,
-        )
-        result = {
-            "image_url": response.data[0].url,
-            "revised_prompt": response.data[0].revised_prompt,
-        }
+        if provider == "openai":
+            client = OpenAI(api_key=api_key)
+            response = client.images.generate(
+                model="dall-e-3",
+                prompt=enhanced_prompt,
+                size="1024x1024",
+                quality="hd",
+                n=1,
+            )
+            result = {
+                "image_url": response.data[0].url,
+                "revised_prompt": response.data[0].revised_prompt,
+            }
+        elif provider == "claude":
+            raise HTTPException(status_code=400, detail="Claude 目前不支援圖片生成，請使用 OpenAI")
+        else:
+            raise HTTPException(status_code=400, detail="不支援的 AI 供應商")
 
         gen = Generation(user_id=user.id, type="product_image", prompt=request.prompt, result=json.dumps(result, ensure_ascii=False))
         db.add(gen)
@@ -309,6 +463,8 @@ async def generate_product_image(
         await db.commit()
 
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

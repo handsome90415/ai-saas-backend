@@ -63,6 +63,9 @@ async def firebase_login(req: FirebaseLoginRequest, db: AsyncSession = Depends(g
             "name": user.name,
             "plan": user.plan,
             "has_api_key": bool(user.openai_api_key),
+            "has_gemini_key": bool(getattr(user, 'gemini_api_key', None)),
+            "has_claude_key": bool(getattr(user, 'claude_api_key', None)),
+            "preferred_provider": getattr(user, 'preferred_provider', 'openai'),
         },
         access_token=token,
     )
@@ -118,6 +121,9 @@ async def google_login(req: GoogleLoginRequest, db: AsyncSession = Depends(get_d
                     "name": user.name,
                     "plan": user.plan,
                     "has_api_key": bool(user.openai_api_key),
+                    "has_gemini_key": bool(getattr(user, 'gemini_api_key', None)),
+                    "has_claude_key": bool(getattr(user, 'claude_api_key', None)),
+                    "preferred_provider": getattr(user, 'preferred_provider', 'openai'),
                 },
                 access_token=token,
             )
@@ -162,6 +168,9 @@ async def apple_login(req: AppleLoginRequest, db: AsyncSession = Depends(get_db)
                     "name": user.name,
                     "plan": user.plan,
                     "has_api_key": bool(user.openai_api_key),
+                    "has_gemini_key": bool(getattr(user, 'gemini_api_key', None)),
+                    "has_claude_key": bool(getattr(user, 'claude_api_key', None)),
+                    "preferred_provider": getattr(user, 'preferred_provider', 'openai'),
                 },
                 access_token=token,
             )

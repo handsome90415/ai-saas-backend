@@ -17,6 +17,9 @@ interface User {
   name: string | null
   plan: string
   has_api_key: boolean
+  has_gemini_key: boolean
+  has_claude_key: boolean
+  preferred_provider: string
 }
 
 interface AuthContextValue {
@@ -66,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const userData = await syncFirebaseUser(firebaseUser)
           setUser(userData)
-        } catch {
+        } catch (e) {
           setUser(null)
         }
       } else {

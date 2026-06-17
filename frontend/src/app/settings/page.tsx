@@ -16,6 +16,33 @@ const planNames: Record<string, string> = {
   enterprise: '企業版',
 }
 
+const providers = [
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    description: 'GPT-4o, DALL-E 3',
+    keyPrefix: 'sk-',
+    placeholder: 'sk-...',
+    docsUrl: 'https://platform.openai.com/api-keys',
+  },
+  {
+    id: 'gemini',
+    name: 'Google Gemini',
+    description: 'Gemini 1.5 Flash',
+    keyPrefix: 'AIza',
+    placeholder: 'AIza...',
+    docsUrl: 'https://aistudio.google.com/apikey',
+  },
+  {
+    id: 'claude',
+    name: 'Claude',
+    description: 'Claude 3 Haiku',
+    keyPrefix: 'sk-ant-',
+    placeholder: 'sk-ant-...',
+    docsUrl: 'https://console.anthropic.com/settings/keys',
+  },
+]
+
 export default function SettingsPage() {
   const { user, isAuthenticated, isLoading: authLoading, refreshUser } = useAuth()
   const router = useRouter()
@@ -25,6 +52,7 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [apiKey, setApiKey] = useState('')
+  const [selectedProvider, setSelectedProvider] = useState('openai')
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
   const [savingApiKey, setSavingApiKey] = useState(false)
@@ -82,14 +110,15 @@ export default function SettingsPage() {
 
   const handleUpdateApiKey = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!apiKey.startsWith('sk-')) {
-      toast('API Key 格式不正確，需以 sk- 開頭', 'error')
+    const provider = providers.find(p => p.id === selectedProvider)
+    if (provider && !apiKey.startsWith(provider.keyPrefix)) {
+      toast(`${provider.name} API Key 格式不正確，需以 ${provider.keyPrefix} 開頭`, 'error')
       return
     }
     setSavingApiKey(true)
     try {
-      await apiPut('/api/auth/api-key', { api_key: apiKey })
-      toast('API Key 已儲存', 'success')
+      await apiPut('/api/auth/provider-key', { provider: selectedProvider, api_key: apiKey })
+      toast(`${provider?.name || selectedProvider} API Key 已儲存`, 'success')
       setApiKey('')
       refreshUser()
     } catch (error: any) {
@@ -98,14 +127,33 @@ export default function SettingsPage() {
     setSavingApiKey(false)
   }
 
-  const handleDeleteApiKey = async () => {
-    if (!confirm('確定要刪除 API Key 嗎？刪除後將無法使用 AI 生成功能。')) return
+  const handleDeleteApiKey = async (provider: string) => {
+    if (!confirm(`確定要刪除 ${providers.find(p => p.id === provider)?.name || provider} API Key 嗎？`)) return
     try {
-      await apiDelete('/api/auth/api-key')
+      await apiDelete(`/api/auth/provider-key/${provider}`)
       toast('API Key 已刪除', 'success')
       refreshUser()
     } catch (error: any) {
       toast(error.message || '刪除失敗', 'error')
+    }
+  }
+
+  const handleSetPreferred = async (provider: string) => {
+    try {
+      await apiPut('/api/auth/preferred-provider', { provider })
+      toast('已設為預設 AI 供應商', 'success')
+      refreshUser()
+    } catch (error: any) {
+      toast(error.message || '設定失敗', 'error')
+    }
+  }
+
+  const getKeyStatus = (provider: string) => {
+    switch (provider) {
+      case 'openai': return user?.has_api_key
+      case 'gemini': return user?.has_gemini_key
+      case 'claude': return user?.has_claude_key
+      default: return false
     }
   }
 
@@ -164,41 +212,87 @@ export default function SettingsPage() {
           </div>
 
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-            <h2 className="text-xl font-bold text-white mb-4">OpenAI API Key</h2>
+            <h2 className="text-xl font-bold text-white mb-4">AI API Keys</h2>
             <p className="text-gray-400 text-sm mb-4">
-              請提供你自己的 OpenAI API Key 以使用 AI 生成功能。
-              你可以在 <a href="https://platform.openai.com/api-keys" target="_blank" className="text-purple-400 hover:underline">OpenAI 後台</a> 取得。
+              提供你的 API Key 以使用 AI 生成功能。你可以同時設定多個供應商。
             </p>
-            <div className="mb-4">
-              <span className="text-white text-sm">狀態：</span>
-              {user?.has_api_key ? (
-                <span className="text-green-400 text-sm">已設定</span>
-              ) : (
-                <span className="text-red-400 text-sm">未設定</span>
-              )}
+
+            <div className="space-y-4 mb-6">
+              {providers.map(provider => {
+                const hasKey = getKeyStatus(provider.id)
+                const isPreferred = user?.preferred_provider === provider.id
+                return (
+                  <div key={provider.id} className={`p-4 rounded-lg border ${isPreferred ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 bg-white/5'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <span className="text-white font-medium">{provider.name}</span>
+                        <span className="text-gray-400 text-sm ml-2">({provider.description})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {hasKey ? (
+                          <span className="text-green-400 text-sm">已設定</span>
+                        ) : (
+                          <span className="text-red-400 text-sm">未設定</span>
+                        )}
+                        {hasKey && !isPreferred && (
+                          <button
+                            onClick={() => handleSetPreferred(provider.id)}
+                            className="text-xs text-purple-400 hover:text-purple-300"
+                          >
+                            設為預設
+                          </button>
+                        )}
+                        {isPreferred && (
+                          <span className="text-xs text-purple-400">預設</span>
+                        )}
+                        {hasKey && (
+                          <button
+                            onClick={() => handleDeleteApiKey(provider.id)}
+                            className="text-xs text-red-400 hover:text-red-300"
+                          >
+                            刪除
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
+
             <form onSubmit={handleUpdateApiKey} className="space-y-4">
               <div>
-                <label className="block text-white mb-2">
-                  {user?.has_api_key ? '更新 API Key' : '新增 API Key'}
-                </label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={e => setApiKey(e.target.value)}
-                  className="w-full p-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
-                  placeholder="sk-..."
-                />
+                <label className="block text-white mb-2">選擇 AI 供應商</label>
+                <select
+                  value={selectedProvider}
+                  onChange={e => { setSelectedProvider(e.target.value); setApiKey('') }}
+                  className="w-full p-3 rounded-lg bg-white/5 border border-white/20 text-white focus:outline-none focus:border-purple-400"
+                >
+                  {providers.map(p => (
+                    <option key={p.id} value={p.id} className="text-gray-900">{p.name} - {p.description}</option>
+                  ))}
+                </select>
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" loading={savingApiKey}>
-                  {user?.has_api_key ? '更新 API Key' : '儲存 API Key'}
-                </Button>
-                {user?.has_api_key && (
-                  <Button type="button" variant="secondary" onClick={handleDeleteApiKey}>
-                    刪除 API Key
+              <div>
+                <label className="block text-white mb-2">API Key</label>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={e => setApiKey(e.target.value)}
+                    className="flex-1 p-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                    placeholder={providers.find(p => p.id === selectedProvider)?.placeholder}
+                  />
+                  <Button type="submit" loading={savingApiKey}>
+                    儲存
                   </Button>
-                )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  取得 Key：
+                  <a href={providers.find(p => p.id === selectedProvider)?.docsUrl} target="_blank" className="text-purple-400 hover:underline">
+                    {providers.find(p => p.id === selectedProvider)?.name} 後台
+                  </a>
+                </p>
               </div>
             </form>
           </div>
