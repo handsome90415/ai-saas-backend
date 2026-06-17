@@ -40,7 +40,10 @@ export default function SignupPage() {
       toast('註冊成功', 'success')
       router.push('/')
     } catch (error: any) {
-      const msg = firebaseErrorMessage(error) || error.message || '註冊失敗'
+      const msg = firebaseErrorMessage(error)
+        || error?.message
+        || error?.detail
+        || '註冊失敗，請稍後再試'
       toast(msg, 'error')
     }
     setLoading(false)

@@ -62,9 +62,11 @@ async function syncFirebaseUser(firebaseUser: any): Promise<User> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const loggingOut = { current: false }
 
   useEffect(() => {
     const unsubscribe = onAuthChange(async (firebaseUser) => {
+      if (loggingOut.current) return
       if (firebaseUser) {
         try {
           const userData = await syncFirebaseUser(firebaseUser)
@@ -110,9 +112,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(async () => {
-    await logoutFirebase()
+    loggingOut.current = true
     localStorage.removeItem('token')
     setUser(null)
+    try {
+      await logoutFirebase()
+    } catch {}
   }, [])
 
   const refreshUser = useCallback(async () => {

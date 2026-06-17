@@ -41,7 +41,10 @@ export default function LoginPage() {
       toast('登入成功', 'success')
       router.push('/')
     } catch (error: any) {
-      const msg = firebaseErrorMessage(error) || error.message || '登入失敗'
+      const msg = firebaseErrorMessage(error)
+        || error?.message
+        || error?.detail
+        || '登入失敗，請檢查帳號密碼'
       toast(msg, 'error')
     }
     setLoading(false)
