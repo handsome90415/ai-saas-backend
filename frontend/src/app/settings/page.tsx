@@ -9,6 +9,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 const planNames: Record<string, string> = {
   free: '免費版',
@@ -29,6 +30,7 @@ export default function SettingsPage() {
   const { user, isAuthenticated, isLoading: authLoading, refreshUser } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
+  const { t, locale } = useLanguage()
   const [name, setName] = useState('')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -146,39 +148,39 @@ export default function SettingsPage() {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-black text-white mb-8 text-center">
-            帳號<span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">設定</span>
+            {t('settings.title')}
           </h1>
 
           <div className="space-y-6">
             {/* Profile */}
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
-              <h2 className="text-xl font-bold text-white mb-4">個人資料</h2>
+              <h2 className="text-xl font-bold text-white mb-4">{t('settings.profile')}</h2>
               <form onSubmit={handleUpdateProfile} className="space-y-4">
                 <div>
-                  <label className="block text-white mb-2 text-sm">電子信箱</label>
+                  <label className="block text-white mb-2 text-sm">{t('settings.email')}</label>
                   <input type="email" value={user?.email || ''} disabled
                     className="w-full p-3 rounded-xl bg-white/5 border border-white/20 text-gray-400 cursor-not-allowed" />
                 </div>
                 <div>
-                  <label className="block text-white mb-2 text-sm">姓名</label>
+                  <label className="block text-white mb-2 text-sm">{t('settings.name')}</label>
                   <input type="text" value={name} onChange={e => setName(e.target.value)}
                     className="w-full p-3 rounded-xl bg-white/5 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
-                    placeholder="你的名字" />
+                    placeholder={t('settings.name.placeholder')} />
                 </div>
                 <div>
-                  <label className="block text-white mb-2 text-sm">目前方案</label>
+                  <label className="block text-white mb-2 text-sm">{t('settings.plan')}</label>
                   <span className="inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm font-bold">
                     {planNames[user?.plan || 'free'] || user?.plan}
                   </span>
                 </div>
-                <Button type="submit" loading={savingProfile}>儲存個人資料</Button>
+                <Button type="submit" loading={savingProfile}>{t('settings.save')}</Button>
               </form>
             </div>
 
             {/* AI API Keys & Models */}
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
-              <h2 className="text-xl font-bold text-white mb-2">AI 設定</h2>
-              <p className="text-gray-400 text-sm mb-6">設定 API Key 和選擇要使用的模型</p>
+              <h2 className="text-xl font-bold text-white mb-2">{t('settings.ai')}</h2>
+              <p className="text-gray-400 text-sm mb-6">{t('settings.ai.desc')}</p>
 
               {/* Provider Status */}
               <div className="space-y-3 mb-6">
@@ -217,7 +219,7 @@ export default function SettingsPage() {
               {/* Add Key & Model */}
               <div className="bg-white/5 rounded-xl p-5 border border-white/10">
                 <div className="mb-4">
-                  <label className="block text-white mb-2 text-sm font-medium">選擇供應商</label>
+                  <label className="block text-white mb-2 text-sm font-medium">{t('settings.provider')}</label>
                   <div className="flex gap-2">
                     {providers.map(p => (
                       <button key={p.id}
@@ -234,12 +236,12 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-white mb-2 text-sm font-medium">API Key</label>
+                  <label className="block text-white mb-2 text-sm font-medium">{t('settings.apiKey')}</label>
                   <div className="flex gap-2">
                     <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)}
                       className="flex-1 p-3 rounded-xl bg-white/5 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
                       placeholder={providers.find(p => p.id === selectedProvider)?.placeholder} />
-                    <Button type="button" onClick={handleUpdateApiKey} loading={savingApiKey}>儲存 Key</Button>
+                    <Button type="button" onClick={handleUpdateApiKey} loading={savingApiKey}>{t('settings.apiKey.save')}</Button>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     取得 Key：<a href={providers.find(p => p.id === selectedProvider)?.docsUrl} target="_blank"
@@ -248,7 +250,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-white mb-2 text-sm font-medium">模型選擇</label>
+                  <label className="block text-white mb-2 text-sm font-medium">{t('settings.model')}</label>
                   <div className="flex gap-2">
                     <select value={customModel} onChange={e => setCustomModel(e.target.value)}
                       className="flex-1 p-3 rounded-xl bg-white/5 border border-white/20 text-white focus:outline-none focus:border-purple-400">
@@ -256,36 +258,36 @@ export default function SettingsPage() {
                         <option key={m} value={m} className="text-gray-900">{m}</option>
                       ))}
                     </select>
-                    <Button type="button" onClick={handleSaveModel} variant="secondary">儲存模型</Button>
+                    <Button type="button" onClick={handleSaveModel} variant="secondary">{t('settings.model.save')}</Button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">可輸入自訂模型名稱，或從下拉選單選擇</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('settings.model.custom')}</p>
                 </div>
               </div>
             </div>
 
             {/* Password */}
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
-              <h2 className="text-xl font-bold text-white mb-4">變更密碼</h2>
+              <h2 className="text-xl font-bold text-white mb-4">{t('settings.password')}</h2>
               <form onSubmit={handleChangePassword} className="space-y-4">
                 <div>
-                  <label className="block text-white mb-2 text-sm">目前密碼</label>
+                  <label className="block text-white mb-2 text-sm">{t('settings.password.current')}</label>
                   <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
                     className="w-full p-3 rounded-xl bg-white/5 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
-                    placeholder="輸入目前密碼" required />
+                    placeholder={locale === 'zh-TW' ? '輸入目前密碼' : 'Enter current password'} required />
                 </div>
                 <div>
-                  <label className="block text-white mb-2 text-sm">新密碼</label>
+                  <label className="block text-white mb-2 text-sm">{t('settings.password.new')}</label>
                   <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
                     className="w-full p-3 rounded-xl bg-white/5 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
-                    placeholder="至少 6 個字元" minLength={6} required />
+                    placeholder={locale === 'zh-TW' ? '至少 6 個字元' : 'At least 6 characters'} minLength={6} required />
                 </div>
                 <div>
-                  <label className="block text-white mb-2 text-sm">確認新密碼</label>
+                  <label className="block text-white mb-2 text-sm">{t('settings.password.confirm')}</label>
                   <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                     className="w-full p-3 rounded-xl bg-white/5 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
-                    placeholder="再次輸入新密碼" minLength={6} required />
+                    placeholder={locale === 'zh-TW' ? '再次輸入新密碼' : 'Confirm new password'} minLength={6} required />
                 </div>
-                <Button type="submit" loading={savingPassword}>變更密碼</Button>
+                <Button type="submit" loading={savingPassword}>{t('settings.password.change')}</Button>
               </form>
             </div>
           </div>

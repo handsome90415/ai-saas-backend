@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, ReactNode } from 'react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 type TabType = 'text' | 'image' | 'product'
 
@@ -12,11 +13,12 @@ interface Props {
 
 export function GeneratorTabs({ textTab, imageTab, productTab }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>('text')
+  const { t } = useLanguage()
 
   const tabs: { key: TabType; label: string }[] = [
-    { key: 'text', label: '文案生成' },
-    { key: 'image', label: '圖片生成' },
-    { key: 'product', label: '產品圖片' },
+    { key: 'text', label: t('gen.text') },
+    { key: 'image', label: t('gen.image') },
+    { key: 'product', label: t('gen.product') },
   ]
 
   return (

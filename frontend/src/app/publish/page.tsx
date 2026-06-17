@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { apiPost } from '@/lib/api'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -123,6 +124,7 @@ const lengths = [
 export default function PublishPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const { toast } = useToast()
+  const { t, locale } = useLanguage()
 
   const [prompt, setPrompt] = useState('')
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['instagram', 'facebook'])
@@ -246,9 +248,9 @@ export default function PublishPage() {
         {/* Hero */}
         <div className="text-center mb-10">
           <h1 className="text-4xl font-black text-white mb-3">
-            多平台<span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">發布</span>
+            {t('publish.title')}
           </h1>
-          <p className="text-gray-400 text-lg">一次生成多個平台的行銷內容，輕鬆管理社群行銷</p>
+          <p className="text-gray-400 text-lg">{t('publish.subtitle')}</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -258,13 +260,13 @@ export default function PublishPage() {
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
               <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm">✏️</span>
-                產品/主題描述
+                {t('publish.input')}
               </h2>
               <Textarea
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
                 rows={4}
-                placeholder="例如：一款新的智慧手錶，具有健康監測功能..."
+                placeholder={t('publish.input.placeholder')}
               />
             </div>
 
@@ -272,7 +274,7 @@ export default function PublishPage() {
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
               <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-sm">✨</span>
-                內容風格
+                {t('publish.style')}
               </h2>
               <div className="grid grid-cols-2 gap-2">
                 {styles.map(s => (
@@ -296,7 +298,7 @@ export default function PublishPage() {
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
               <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-sm">📏</span>
-                內容長度
+                {t('publish.length')}
               </h2>
               <div className="grid grid-cols-3 gap-2">
                 {lengths.map(l => (
@@ -320,8 +322,8 @@ export default function PublishPage() {
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
               <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-sm">🌐</span>
-                選擇發布平台
-                <span className="ml-auto text-xs font-normal text-gray-400 bg-white/10 px-2 py-1 rounded-full">{selectedPlatforms.length} 已選</span>
+                {t('publish.platforms')}
+                <span className="ml-auto text-xs font-normal text-gray-400 bg-white/10 px-2 py-1 rounded-full">{selectedPlatforms.length} {t('publish.selected')}</span>
               </h2>
               <div className="space-y-2">
                 {platforms.map(platform => {
@@ -373,7 +375,7 @@ export default function PublishPage() {
                   生成中...
                 </span>
               ) : (
-                `🚀 為 ${selectedPlatforms.length} 個平台生成內容`
+                `🚀 ${t('publish.generate', { n: selectedPlatforms.length })}`
               )}
             </button>
           </div>
@@ -383,18 +385,18 @@ export default function PublishPage() {
             {contents.length > 0 && (
               <div className="mb-6 bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-white/10 shadow-2xl">
                 <div className="flex justify-between items-center mb-3">
-                  <h2 className="text-lg font-bold text-white">生成結果</h2>
+                  <h2 className="text-lg font-bold text-white">{t('publish.results')}</h2>
                   <div className="flex items-center gap-3">
                     <span className="text-sm">
                       {allDone ? (
-                        <span className="text-green-400 font-bold">✅ 全部完成</span>
+                        <span className="text-green-400 font-bold">✅ {t('publish.allDone')}</span>
                       ) : (
-                        <span className="text-gray-400">{doneCount}/{totalCount} 已完成</span>
+                        <span className="text-gray-400">{doneCount}/{totalCount} {t('publish.completed')}</span>
                       )}
                     </span>
                     {contents.some(c => c.status === 'done') && (
                       <div className="flex gap-2">
-                        <button onClick={copyAll} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition">📋 複製全部</button>
+                        <button onClick={copyAll} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition">📋 {t('publish.copyAll')}</button>
                         <button onClick={() => downloadAs('txt')} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition">📄 TXT</button>
                         <button onClick={() => downloadAs('json')} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition">📦 JSON</button>
                       </div>
@@ -466,13 +468,13 @@ export default function PublishPage() {
                                 onClick={() => copyContent(index)}
                                 className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm font-bold rounded-xl transition-all duration-200 backdrop-blur"
                               >
-                                {copiedIndex === index ? '✓ 已複製' : '📋 複製'}
+                                {copiedIndex === index ? `✓ ${t('publish.copied')}` : `📋 ${t('publish.copy')}`}
                               </button>
                               <button
                                 onClick={() => regenerateSingle(content.platform)}
                                 className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/80 text-sm font-bold rounded-xl transition-all duration-200"
                               >
-                                🔄 重新生成
+                                🔄 {t('publish.regenerate')}
                               </button>
                             </>
                           )}
@@ -487,7 +489,7 @@ export default function PublishPage() {
                               onClick={() => regenerateSingle(content.platform)}
                               className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm font-bold rounded-xl transition"
                             >
-                              ⚠️ 重試
+                              ⚠️ {t('publish.retry')}
                             </button>
                           )}
                         </div>
@@ -505,7 +507,7 @@ export default function PublishPage() {
                         )}
 
                         {content.status === 'error' && (
-                          <p className="text-red-400 text-center py-4">生成失敗，請稍後再試或點擊「重試」</p>
+                          <p className="text-red-400 text-center py-4">{locale === 'zh-TW' ? '生成失敗，請稍後再試或點擊「重試」' : 'Generation failed. Try again or click Retry'}</p>
                         )}
 
                         {content.status === 'done' && (
@@ -531,8 +533,8 @@ export default function PublishPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                   </svg>
                 </div>
-                <p className="text-gray-300 text-xl font-bold mb-2">輸入產品描述，一次生成多平台內容</p>
-                <p className="text-gray-500">選擇平台、風格和長度，AI 為你量身打造</p>
+                <p className="text-gray-300 text-xl font-bold mb-2">{t('publish.empty')}</p>
+                <p className="text-gray-500">{t('publish.empty.sub')}</p>
               </div>
             )}
           </div>

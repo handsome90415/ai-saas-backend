@@ -1,36 +1,41 @@
-import Link from 'next/link'
+'use client'
 
-const plans = [
-  {
-    name: '免費版',
-    price: '$0',
-    features: ['每月 10 次文案生成', '每月 5 次圖片生成', '基本模板'],
-    button: '開始使用',
-    href: '/signup',
-    featured: false,
-  },
-  {
-    name: '專業版',
-    price: '$9.99',
-    period: '/月',
-    badge: '最受歡迎',
-    features: ['無限文案生成', '每月 100 次圖片生成', '進階模板庫', '優先客服'],
-    button: '立即訂閱',
-    href: '/signup',
-    featured: true,
-  },
-  {
-    name: '企業版',
-    price: '$29.99',
-    period: '/月',
-    features: ['無限文案生成', '無限圖片生成', 'API 存取', '專屬客服', '自訂模板'],
-    button: '聯絡我們',
-    href: '/signup',
-    featured: false,
-  },
-]
+import Link from 'next/link'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export function PricingCards() {
+  const { t } = useLanguage()
+
+  const plans = [
+    {
+      name: t('pricing.free'),
+      price: '$0',
+      features: ['10 ' + (t('gen.text')), '5 ' + (t('gen.image'))],
+      button: t('pricing.cta.free'),
+      href: '/signup',
+      featured: false,
+    },
+    {
+      name: t('pricing.pro'),
+      price: '$9.99',
+      period: '/mo',
+      badge: t('pricing.popular'),
+      features: [t('pricing.features.unlimited'), t('pricing.features.images.100'), t('pricing.features.templates'), t('pricing.features.priority')],
+      button: t('pricing.cta.pro'),
+      href: '/signup',
+      featured: true,
+    },
+    {
+      name: t('pricing.enterprise'),
+      price: '$29.99',
+      period: '/mo',
+      features: [t('pricing.features.unlimited'), t('pricing.features.images.inf'), t('pricing.features.api'), t('pricing.features.dedicated')],
+      button: t('pricing.cta.enterprise'),
+      href: '/signup',
+      featured: false,
+    },
+  ]
+
   return (
     <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
       {plans.map(plan => (
