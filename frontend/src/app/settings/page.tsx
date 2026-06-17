@@ -18,11 +18,11 @@ const planNames: Record<string, string> = {
 
 const providers = [
   { id: 'openai', name: 'OpenAI', keyPrefix: 'sk-', placeholder: 'sk-...', docsUrl: 'https://platform.openai.com/api-keys',
-    models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
+    models: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'o3', 'o3-mini', 'o4-mini', 'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'o1', 'o1-mini'] },
   { id: 'gemini', name: 'Google Gemini', keyPrefix: 'AIza', placeholder: 'AIza...', docsUrl: 'https://aistudio.google.com/apikey',
-    models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'] },
+    models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'] },
   { id: 'claude', name: 'Claude', keyPrefix: 'sk-ant-', placeholder: 'sk-ant-...', docsUrl: 'https://console.anthropic.com/settings/keys',
-    models: ['claude-3-haiku-20240307', 'claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'] },
+    models: ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'] },
 ]
 
 export default function SettingsPage() {
@@ -54,9 +54,9 @@ export default function SettingsPage() {
   const updateModelForProvider = (providerId: string) => {
     if (!user) return
     switch (providerId) {
-      case 'openai': setCustomModel(user.openai_model || 'gpt-4o-mini'); break
-      case 'gemini': setCustomModel(user.gemini_model || 'gemini-1.5-flash'); break
-      case 'claude': setCustomModel(user.claude_model || 'claude-3-haiku-20240307'); break
+      case 'openai': setCustomModel(user.openai_model || 'gpt-4.1-mini'); break
+      case 'gemini': setCustomModel(user.gemini_model || 'gemini-2.5-flash'); break
+      case 'claude': setCustomModel(user.claude_model || 'claude-sonnet-4-20250514'); break
     }
   }
 
@@ -123,9 +123,9 @@ export default function SettingsPage() {
 
   const getModelForProvider = (provider: string) => {
     switch (provider) {
-      case 'openai': return user?.openai_model || 'gpt-4o-mini'
-      case 'gemini': return user?.gemini_model || 'gemini-1.5-flash'
-      case 'claude': return user?.claude_model || 'claude-3-haiku-20240307'
+      case 'openai': return user?.openai_model || 'gpt-4.1-mini'
+      case 'gemini': return user?.gemini_model || 'gemini-2.5-flash'
+      case 'claude': return user?.claude_model || 'claude-sonnet-4-20250514'
       default: return ''
     }
   }
