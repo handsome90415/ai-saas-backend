@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { apiGet, apiDelete } from '@/lib/api'
@@ -17,6 +17,37 @@ interface Generation {
   created_at: string | null
 }
 
+const typeLabels: Record<string, string> = {
+  text: '文案生成',
+  image: '圖片生成',
+  product_image: '產品圖片',
+  product_content: '多平台發布',
+  product_analysis: '產品分析',
+}
+
+const allTypes = ['', 'text', 'image', 'product_image', 'product_content', 'product_analysis']
+
+function formatAsText(gen: Generation): string {
+  const r = gen.result
+  if (!r) return gen.prompt
+
+  if (gen.type === 'text' || gen.type === 'product_content') {
+    const parts: string[] = []
+    if (r.title) parts.push(r.title)
+    if (r.content) parts.push(r.content)
+    if (r.hashtags?.length) parts.push(r.hashtags.map((t: string) => '#' + t).join(' '))
+    if (r.cta) parts.push(r.cta)
+    return parts.join('\n\n')
+  }
+  if (gen.type === 'image' || gen.type === 'product_image') {
+    return r.revised_prompt || r.image_url || gen.prompt
+  }
+  if (gen.type === 'product_analysis') {
+    return JSON.stringify(r, null, 2)
+  }
+  return gen.prompt
+}
+
 export default function HistoryPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
@@ -28,6 +59,7 @@ export default function HistoryPage() {
   const [filter, setFilter] = useState<string>('')
   const [search, setSearch] = useState<string>('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const limit = 10
 
   useEffect(() => {
@@ -66,41 +98,81 @@ export default function HistoryPage() {
     }
   }
 
-  const typeLabels: Record<string, string> = {
-    text: '文案生成',
-    image: '圖片生成',
-    product_image: '產品圖片',
-  }
+  const copyContent = useCallback((gen: Generation) => {
+    const text = formatAsText(gen)
+    navigator.clipboard.writeText(text)
+    setCopiedId(gen.id)
+    toast('已複製到剪貼簿', 'success')
+    setTimeout(() => setCopiedId(null), 2000)
+  }, [toast])
+
+  const exportAsTxt = useCallback((gen: Generation) => {
+    const text = formatAsText(gen)
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${typeLabels[gen.type] || gen.type}-${Date.now()}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast('已下載 TXT 檔案', 'success')
+  }, [toast])
 
   const renderResult = (gen: Generation) => {
-    if (gen.type === 'text' && gen.result) {
+    const r = gen.result
+    if (!r) return <p className="text-gray-400">無法顯示結果</p>
+
+    if (gen.type === 'text' || gen.type === 'product_content') {
       return (
         <div className="space-y-3">
-          {gen.result.title && <h4 className="text-lg font-bold text-purple-300">{gen.result.title}</h4>}
-          {gen.result.content && <p className="text-gray-200 whitespace-pre-wrap">{gen.result.content}</p>}
-          {gen.result.hashtags && gen.result.hashtags.length > 0 && (
+          {r.title && <h4 className="text-lg font-bold text-purple-300">{r.title}</h4>}
+          {r.content && <p className="text-gray-200 whitespace-pre-wrap leading-relaxed">{r.content}</p>}
+          {r.hashtags?.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {gen.result.hashtags.map((tag: string, i: number) => (
+              {r.hashtags.map((tag: string, i: number) => (
                 <span key={i} className="text-sm text-purple-400">#{tag}</span>
               ))}
             </div>
           )}
+          {r.cta && (
+            <p className="text-sm text-blue-300 mt-2">CTA: {r.cta}</p>
+          )}
         </div>
       )
     }
-    if ((gen.type === 'image' || gen.type === 'product_image') && gen.result) {
+
+    if (gen.type === 'image' || gen.type === 'product_image') {
       return (
         <div className="space-y-3">
-          {gen.result.image_url && (
-            <img src={gen.result.image_url} alt={gen.prompt} className="max-w-md rounded-lg" />
+          {r.image_url && (
+            <img src={r.image_url} alt={gen.prompt} className="max-w-md rounded-lg" />
           )}
-          {gen.result.revised_prompt && (
-            <p className="text-sm text-gray-400">{gen.result.revised_prompt}</p>
+          {r.revised_prompt && (
+            <p className="text-sm text-gray-400">{r.revised_prompt}</p>
           )}
         </div>
       )
     }
-    return <p className="text-gray-400">無法顯示結果</p>
+
+    if (gen.type === 'product_analysis') {
+      return (
+        <div className="space-y-3 text-sm">
+          {r.name && <p><span className="text-gray-400">產品名稱：</span><span className="text-white">{r.name}</span></p>}
+          {r.description && <p><span className="text-gray-400">描述：</span><span className="text-gray-200">{r.description}</span></p>}
+          {r.features?.length > 0 && (
+            <div>
+              <span className="text-gray-400">特色：</span>
+              <ul className="list-disc list-inside text-gray-200 mt-1">
+                {r.features.map((f: string, i: number) => <li key={i}>{f}</li>)}
+              </ul>
+            </div>
+          )}
+          {r.target_audience && <p><span className="text-gray-400">目標受眾：</span><span className="text-gray-200">{r.target_audience}</span></p>}
+        </div>
+      )
+    }
+
+    return <pre className="text-xs text-gray-400 whitespace-pre-wrap">{JSON.stringify(r, null, 2)}</pre>
   }
 
   const totalPages = Math.ceil(total / limit)
@@ -138,8 +210,8 @@ export default function HistoryPage() {
           />
         </div>
 
-        <div className="flex gap-2 mb-6">
-          {['', 'text', 'image', 'product_image'].map(type => (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {allTypes.map(type => (
             <button
               key={type}
               onClick={() => { setFilter(type); setPage(1) }}
@@ -188,17 +260,37 @@ export default function HistoryPage() {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(gen.id) }}
-                    className="text-red-400 hover:text-red-300 text-sm"
-                  >
-                    刪除
-                  </button>
                 </div>
                 {expandedId === gen.id && (
                   <div className="px-4 pb-4 pt-2 border-t border-white/10 bg-white/5">
                     <p className="text-xs text-gray-500 mb-2">提示詞：{gen.prompt}</p>
                     {renderResult(gen)}
+                    <div className="flex gap-2 mt-4 pt-3 border-t border-white/10">
+                      <button
+                        onClick={() => copyContent(gen)}
+                        className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition flex items-center gap-1"
+                      >
+                        {copiedId === gen.id ? (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        )}
+                        {copiedId === gen.id ? '已複製' : '複製'}
+                      </button>
+                      <button
+                        onClick={() => exportAsTxt(gen)}
+                        className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition flex items-center gap-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        匯出 TXT
+                      </button>
+                      <button
+                        onClick={() => handleDelete(gen.id)}
+                        className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm rounded-lg transition ml-auto"
+                      >
+                        刪除
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
