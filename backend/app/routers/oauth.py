@@ -66,9 +66,9 @@ async def firebase_login(req: FirebaseLoginRequest, db: AsyncSession = Depends(g
             "has_gemini_key": bool(getattr(user, 'gemini_api_key', None)),
             "has_claude_key": bool(getattr(user, 'claude_api_key', None)),
             "preferred_provider": getattr(user, 'preferred_provider', 'openai'),
-            "openai_model": getattr(user, 'openai_model', 'gpt-4.1-mini'),
+            "openai_model": getattr(user, 'openai_model', 'gpt-5.4-mini'),
             "gemini_model": getattr(user, 'gemini_model', 'gemini-2.5-flash'),
-            "claude_model": getattr(user, 'claude_model', 'claude-sonnet-4-20250514'),
+            "claude_model": getattr(user, 'claude_model', 'claude-sonnet-4-6'),
         },
         access_token=token,
     )

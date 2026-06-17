@@ -93,9 +93,9 @@ class UserResponse(BaseModel):
     has_gemini_key: bool = False
     has_claude_key: bool = False
     preferred_provider: str = "openai"
-    openai_model: str = "gpt-4.1-mini"
+    openai_model: str = "gpt-5.4-mini"
     gemini_model: str = "gemini-2.5-flash"
-    claude_model: str = "claude-sonnet-4-20250514"
+    claude_model: str = "claude-sonnet-4-6"
 
 class AuthResponse(BaseModel):
     user: UserResponse
@@ -109,9 +109,9 @@ def user_response(user: User) -> UserResponse:
         has_gemini_key=bool(user.gemini_api_key),
         has_claude_key=bool(user.claude_api_key),
         preferred_provider=getattr(user, 'preferred_provider', 'openai'),
-        openai_model=getattr(user, 'openai_model', 'gpt-4.1-mini'),
+        openai_model=getattr(user, 'openai_model', 'gpt-5.4-mini'),
         gemini_model=getattr(user, 'gemini_model', 'gemini-2.5-flash'),
-        claude_model=getattr(user, 'claude_model', 'claude-sonnet-4-20250514'),
+        claude_model=getattr(user, 'claude_model', 'claude-sonnet-4-6'),
     )
 
 
@@ -282,11 +282,11 @@ async def update_model(
     db: AsyncSession = Depends(get_db),
 ):
     if req.provider == "openai":
-        user.openai_model = req.model.strip() or "gpt-4.1-mini"
+        user.openai_model = req.model.strip() or "gpt-5.4-mini"
     elif req.provider == "gemini":
         user.gemini_model = req.model.strip() or "gemini-2.5-flash"
     elif req.provider == "claude":
-        user.claude_model = req.model.strip() or "claude-sonnet-4-20250514"
+        user.claude_model = req.model.strip() or "claude-sonnet-4-6"
     else:
         raise HTTPException(status_code=400, detail="不支援的 AI 供應商")
     await db.commit()
@@ -362,7 +362,7 @@ async def generate_text(
         if provider == "openai":
             client = OpenAI(api_key=api_key)
             response = client.chat.completions.create(
-                model=getattr(user, 'openai_model', 'gpt-4.1-mini'),
+                model=getattr(user, 'openai_model', 'gpt-5.4-mini'),
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": request.prompt},
@@ -385,7 +385,7 @@ async def generate_text(
             import anthropic
             client = anthropic.Anthropic(api_key=api_key)
             response = client.messages.create(
-                model=getattr(user, 'claude_model', 'claude-sonnet-4-20250514'),
+                model=getattr(user, 'claude_model', 'claude-sonnet-4-6'),
                 max_tokens=1024,
                 system=system_prompt,
                 messages=[{"role": "user", "content": request.prompt}],
