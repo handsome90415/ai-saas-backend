@@ -93,6 +93,9 @@ class UserResponse(BaseModel):
     has_gemini_key: bool = False
     has_claude_key: bool = False
     preferred_provider: str = "openai"
+    openai_model: str = "gpt-4o-mini"
+    gemini_model: str = "gemini-1.5-flash"
+    claude_model: str = "claude-3-haiku-20240307"
 
 class AuthResponse(BaseModel):
     user: UserResponse
@@ -106,6 +109,9 @@ def user_response(user: User) -> UserResponse:
         has_gemini_key=bool(user.gemini_api_key),
         has_claude_key=bool(user.claude_api_key),
         preferred_provider=getattr(user, 'preferred_provider', 'openai'),
+        openai_model=getattr(user, 'openai_model', 'gpt-4o-mini'),
+        gemini_model=getattr(user, 'gemini_model', 'gemini-1.5-flash'),
+        claude_model=getattr(user, 'claude_model', 'claude-3-haiku-20240307'),
     )
 
 
@@ -154,6 +160,10 @@ class UpdateProviderKeyRequest(BaseModel):
 
 class UpdatePreferredProviderRequest(BaseModel):
     provider: str
+
+class UpdateModelRequest(BaseModel):
+    provider: str
+    model: str
 
 
 @app.put("/api/auth/profile", response_model=UserResponse)
@@ -265,6 +275,25 @@ async def update_preferred_provider(
     return user_response(user)
 
 
+@app.put("/api/auth/model", response_model=UserResponse)
+async def update_model(
+    req: UpdateModelRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if req.provider == "openai":
+        user.openai_model = req.model.strip() or "gpt-4o-mini"
+    elif req.provider == "gemini":
+        user.gemini_model = req.model.strip() or "gemini-1.5-flash"
+    elif req.provider == "claude":
+        user.claude_model = req.model.strip() or "claude-3-haiku-20240307"
+    else:
+        raise HTTPException(status_code=400, detail="不支援的 AI 供應商")
+    await db.commit()
+    await db.refresh(user)
+    return user_response(user)
+
+
 # ── Generation ────────────────────────────────────────
 
 class TextGenerationRequest(BaseModel):
@@ -333,7 +362,7 @@ async def generate_text(
         if provider == "openai":
             client = OpenAI(api_key=api_key)
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=getattr(user, 'openai_model', 'gpt-4o-mini'),
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": request.prompt},
@@ -345,7 +374,7 @@ async def generate_text(
         elif provider == "gemini":
             import google.generativeai as genai
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel(getattr(user, 'gemini_model', 'gemini-1.5-flash'))
             response = model.generate_content(
                 f"{system_prompt}\n\n用戶需求: {request.prompt}",
                 generation_config=genai.GenerationConfig(response_mime_type="application/json"),
@@ -356,7 +385,7 @@ async def generate_text(
             import anthropic
             client = anthropic.Anthropic(api_key=api_key)
             response = client.messages.create(
-                model="claude-3-haiku-20240307",
+                model=getattr(user, 'claude_model', 'claude-3-haiku-20240307'),
                 max_tokens=1024,
                 system=system_prompt,
                 messages=[{"role": "user", "content": request.prompt}],

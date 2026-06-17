@@ -20,6 +20,9 @@ interface User {
   has_gemini_key: boolean
   has_claude_key: boolean
   preferred_provider: string
+  openai_model: string
+  gemini_model: string
+  claude_model: string
 }
 
 interface AuthContextValue {
