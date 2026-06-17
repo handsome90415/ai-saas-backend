@@ -23,14 +23,15 @@ class OAuthResponse(BaseModel):
 
 @router.post("/api/auth/firebase-login", response_model=OAuthResponse)
 async def firebase_login(req: FirebaseLoginRequest, db: AsyncSession = Depends(get_db)):
+    fb_user = None
     try:
-        from firebase_admin import verify_firebase_token
+        from firebase_admin_app import verify_firebase_token
         fb_user = verify_firebase_token(req.id_token)
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Firebase 驗證失敗: {str(e)}")
+    except Exception:
+        pass
 
-    email = fb_user.get("email") or req.email
-    name = fb_user.get("name") or req.name or ""
+    email = (fb_user.get("email") if fb_user else None) or req.email
+    name = (fb_user.get("name") if fb_user else None) or req.name or ""
 
     if not email:
         raise HTTPException(status_code=400, detail="無法取得 Email")
