@@ -434,12 +434,19 @@ async def generate_image(
                 model="gpt-image-2",
                 prompt=request.prompt,
                 size=request.size,
-                quality="standard",
                 n=1,
             )
+            image_data = response.data[0]
+            if image_data.url:
+                image_url = image_data.url
+            elif image_data.b64_json:
+                import base64
+                image_url = f"data:image/png;base64,{image_data.b64_json}"
+            else:
+                raise HTTPException(status_code=500, detail="圖片生成失敗：無回傳資料")
             result = {
-                "image_url": response.data[0].url,
-                "revised_prompt": response.data[0].revised_prompt,
+                "image_url": image_url,
+                "revised_prompt": image_data.revised_prompt or request.prompt,
             }
         elif provider == "gemini":
             import google.generativeai as genai
@@ -488,12 +495,19 @@ async def generate_product_image(
                 model="gpt-image-2",
                 prompt=enhanced_prompt,
                 size="1024x1024",
-                quality="hd",
                 n=1,
             )
+            image_data = response.data[0]
+            if image_data.url:
+                image_url = image_data.url
+            elif image_data.b64_json:
+                import base64
+                image_url = f"data:image/png;base64,{image_data.b64_json}"
+            else:
+                raise HTTPException(status_code=500, detail="圖片生成失敗：無回傳資料")
             result = {
-                "image_url": response.data[0].url,
-                "revised_prompt": response.data[0].revised_prompt,
+                "image_url": image_url,
+                "revised_prompt": image_data.revised_prompt or request.prompt,
             }
         elif provider == "claude":
             raise HTTPException(status_code=400, detail="Claude 目前不支援圖片生成，請使用 OpenAI")
