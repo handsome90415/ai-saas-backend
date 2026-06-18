@@ -65,7 +65,7 @@ function getPlatformPreviewStyle(platform: string): { bg: string; textClass: str
 }
 
 function PlatformPreview({ content, platform }: { content: ProductContent; platform: string }) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const style = getPlatformPreviewStyle(platform)
   const platformInfo = platforms.find(p => p.value === platform)
   const truncatedContent = content.content.split('\n').slice(0, style.maxLines).join('\n')
