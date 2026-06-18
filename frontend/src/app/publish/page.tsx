@@ -535,6 +535,7 @@ export default function PublishPage() {
 }
 
 function PlatformPreview({ platform, title, content, hashtags }: { platform: PlatformDef; title: string; content: string; hashtags: string[] }) {
+  const { t } = useLanguage()
   if (platform.id === 'twitter') {
     return (
       <div className="rounded-xl border border-white/10 overflow-hidden bg-white">
