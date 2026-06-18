@@ -1,5 +1,5 @@
 import stripe
-from config import STRIPE_SECRET_KEY
+from config import STRIPE_SECRET_KEY, STRIPE_PRO_PRICE_ID, STRIPE_ENTERPRISE_PRICE_ID
 
 stripe.api_key = STRIPE_SECRET_KEY
 
@@ -9,8 +9,13 @@ PLANS = {
     "enterprise": {"name": "企業版", "price": 2999, "text_limit": -1, "image_limit": -1},
 }
 
-PRO_PRICE_ID = "price_pro_monthly"
-ENTERPRISE_PRICE_ID = "price_enterprise_monthly"
+
+def get_price_id(plan: str) -> str:
+    if plan == "pro":
+        return STRIPE_PRO_PRICE_ID
+    if plan == "enterprise":
+        return STRIPE_ENTERPRISE_PRICE_ID
+    raise ValueError(f"Unknown plan: {plan}")
 
 
 def create_checkout_session(customer_id: str, price_id: str, success_url: str, cancel_url: str):

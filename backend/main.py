@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Query, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, Query, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel, EmailStr
@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from database import init_db, get_db, User, Generation, UsageRecord
 from auth import hash_password, verify_password, create_access_token, get_current_user
 from config import OPENAI_API_KEY
+from usage import check_usage_limit
 from app.routers import product
 from app.routers import oauth
 from app.routers import admin
@@ -331,6 +332,7 @@ async def generate_text(
     db: AsyncSession = Depends(get_db),
 ):
     api_key, provider = get_provider_api_key(user, request.provider)
+    await check_usage_limit(user, "text", db)
     try:
         style_prompts = {
             "professional": "專業、正式的商業語氣",
@@ -424,11 +426,12 @@ async def generate_image(
     db: AsyncSession = Depends(get_db),
 ):
     api_key, provider = get_provider_api_key(user, request.provider)
+    await check_usage_limit(user, "image", db)
     try:
         if provider == "openai":
             client = OpenAI(api_key=api_key)
             response = client.images.generate(
-                model="dall-e-3",
+                model="gpt-image-2",
                 prompt=request.prompt,
                 size=request.size,
                 quality="standard",
@@ -473,6 +476,7 @@ async def generate_product_image(
     db: AsyncSession = Depends(get_db),
 ):
     api_key, provider = get_provider_api_key(user, request.provider)
+    await check_usage_limit(user, "image", db)
     try:
         enhanced_prompt = f"""Professional e-commerce product photo:
         {request.prompt}
@@ -481,7 +485,7 @@ async def generate_product_image(
         if provider == "openai":
             client = OpenAI(api_key=api_key)
             response = client.images.generate(
-                model="dall-e-3",
+                model="gpt-image-2",
                 prompt=enhanced_prompt,
                 size="1024x1024",
                 quality="hd",
@@ -618,19 +622,21 @@ async def create_checkout(
     if req.plan not in ("pro", "enterprise"):
         raise HTTPException(status_code=400, detail="無效的方案")
 
-    from stripe_service import PLANS, PRO_PRICE_ID, ENTERPRISE_PRICE_ID, create_checkout_session, create_customer
+    from stripe_service import get_price_id, create_checkout_session, create_customer
+    from config import NEXT_PUBLIC_APP_URL
+
+    price_id = get_price_id(req.plan)
 
     if not user.stripe_customer_id:
         customer = create_customer(email=user.email, name=user.name)
         user.stripe_customer_id = customer.id
         await db.commit()
 
-    price_id = PRO_PRICE_ID if req.plan == "pro" else ENTERPRISE_PRICE_ID
     session = create_checkout_session(
         customer_id=user.stripe_customer_id,
         price_id=price_id,
-        success_url="http://localhost:3000/billing?success=true",
-        cancel_url="http://localhost:3000/pricing",
+        success_url=f"{NEXT_PUBLIC_APP_URL}/billing?success=true",
+        cancel_url=f"{NEXT_PUBLIC_APP_URL}/pricing",
     )
     return {"checkout_url": session.url}
 
@@ -676,21 +682,25 @@ async def billing_portal(
     if not user.stripe_customer_id:
         raise HTTPException(status_code=400, detail="尚未設定付款資訊")
     from stripe_service import create_portal_session
+    from config import NEXT_PUBLIC_APP_URL
     session = create_portal_session(
         customer_id=user.stripe_customer_id,
-        return_url="http://localhost:3000/billing",
+        return_url=f"{NEXT_PUBLIC_APP_URL}/billing",
     )
     return {"portal_url": session.url}
 
 
 @app.post("/api/webhooks/stripe")
-async def stripe_webhook(request_body: bytes, db: AsyncSession = Depends(get_db)):
+async def stripe_webhook(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
     import stripe
-    from config import STRIPE_WEBHOOK_SECRET
+    from config import STRIPE_WEBHOOK_SECRET, STRIPE_ENTERPRISE_PRICE_ID
     from stripe_service import PLANS
 
-    payload = request_body
-    sig_header = __import__("os").getenv("HTTP_STRIPE_SIGNATURE", "")
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature", "")
 
     if STRIPE_WEBHOOK_SECRET:
         try:
@@ -712,9 +722,39 @@ async def stripe_webhook(request_body: bytes, db: AsyncSession = Depends(get_db)
                 user.stripe_subscription_id = subscription_id
                 await db.commit()
 
+    elif event["type"] == "customer.subscription.updated":
+        subscription = event["data"]["object"]
+        customer_id = subscription.get("customer")
+        status = subscription.get("status")
+        if customer_id:
+            result = await db.execute(select(User).where(User.stripe_customer_id == customer_id))
+            user = result.scalar_one_or_none()
+            if user:
+                if status == "active":
+                    items = subscription.get("items", {}).get("data", [])
+                    if items:
+                        price_id = items[0].get("price", {}).get("id")
+                        if price_id == STRIPE_ENTERPRISE_PRICE_ID:
+                            user.plan = "enterprise"
+                        else:
+                            user.plan = "pro"
+                elif status in ("past_due", "canceled", "unpaid"):
+                    user.plan = "free"
+                await db.commit()
+
     elif event["type"] == "customer.subscription.deleted":
         subscription = event["data"]["object"]
         customer_id = subscription.get("customer")
+        if customer_id:
+            result = await db.execute(select(User).where(User.stripe_customer_id == customer_id))
+            user = result.scalar_one_or_none()
+            if user:
+                user.plan = "free"
+                await db.commit()
+
+    elif event["type"] == "invoice.payment_failed":
+        invoice = event["data"]["object"]
+        customer_id = invoice.get("customer")
         if customer_id:
             result = await db.execute(select(User).where(User.stripe_customer_id == customer_id))
             user = result.scalar_one_or_none()

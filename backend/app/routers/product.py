@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db, User, Generation, UsageRecord
 from auth import get_current_user
+from usage import check_usage_limit
 
 router = APIRouter()
 
@@ -45,6 +46,7 @@ async def analyze_product_image(
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="請上傳圖片檔案")
 
+    await check_usage_limit(user, "text", db)
     try:
         contents = await file.read()
         base64_image = base64.b64encode(contents).decode("utf-8")
@@ -107,6 +109,8 @@ async def generate_product_content(
 ):
     if not user.openai_api_key:
         raise HTTPException(status_code=400, detail="請先在設定中新增 OpenAI API Key")
+
+    await check_usage_limit(user, "text", db)
 
     platform_context = {
         "instagram": "Instagram 貼文，需要吸引人的標題、內容和 hashtag",
