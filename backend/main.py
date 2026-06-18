@@ -661,22 +661,24 @@ async def billing_status(
     db: AsyncSession = Depends(get_db),
 ):
     from stripe_service import PLANS
+    import datetime as _dt
 
     plan_info = PLANS.get(user.plan, PLANS["free"])
-    now_month = __import__("datetime").datetime.now().strftime("%Y-%m")
+    now = _dt.datetime.now(_dt.timezone.utc)
+    month_start = _dt.datetime(now.year, now.month, 1, tzinfo=_dt.timezone.utc)
 
     text_result = await db.execute(
         select(func.count(UsageRecord.id)).where(
             UsageRecord.user_id == user.id,
             UsageRecord.type == "text",
-            func.strftime("%Y-%m", UsageRecord.created_at) == now_month,
+            UsageRecord.created_at >= month_start,
         )
     )
     image_result = await db.execute(
         select(func.count(UsageRecord.id)).where(
             UsageRecord.user_id == user.id,
             UsageRecord.type == "image",
-            func.strftime("%Y-%m", UsageRecord.created_at) == now_month,
+            UsageRecord.created_at >= month_start,
         )
     )
 

@@ -15,12 +15,13 @@ async def check_usage_limit(user: User, usage_type: str, db: AsyncSession):
     if limit == -1:
         return
 
-    now_month = datetime.datetime.now().strftime("%Y-%m")
+    now = datetime.datetime.now(datetime.timezone.utc)
+    month_start = datetime.datetime(now.year, now.month, 1, tzinfo=datetime.timezone.utc)
     result = await db.execute(
         select(func.count(UsageRecord.id)).where(
             UsageRecord.user_id == user.id,
             UsageRecord.type == usage_type,
-            func.strftime("%Y-%m", UsageRecord.created_at) == now_month,
+            UsageRecord.created_at >= month_start,
         )
     )
     current_usage = result.scalar() or 0
