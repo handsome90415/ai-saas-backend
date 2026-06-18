@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { apiPost } from '@/lib/api'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -33,17 +34,17 @@ const platforms = [
   { value: 'linkedin', label: 'LinkedIn', icon: '💼' },
   { value: 'tiktok', label: 'TikTok', icon: '🎵' },
   { value: 'youtube', label: 'YouTube', icon: '▶️' },
-  { value: 'blog', label: '部落格', icon: '📝' },
+  { value: 'blog', label: 'Blog', icon: '📝' },
 ]
 
 const styles = [
-  { value: 'professional', label: '專業正式' },
-  { value: 'casual', label: '輕鬆友善' },
-  { value: 'creative', label: '創意吸睛' },
-  { value: 'humorous', label: '幽默有趣' },
+  { value: 'professional', label: t('style.professional') },
+  { value: 'casual', label: t('style.casual') },
+  { value: 'creative', label: t('style.creative') },
+  { value: 'humorous', label: t('style.humorous') },
 ]
 
-const steps = ['上傳', '分析', '生成', '預覽']
+const steps = [t('product.step.upload'), t('product.step.analyze'), t('product.step.generate'), t('product.step.preview')]
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + ' B'
@@ -80,7 +81,7 @@ function PlatformPreview({ content, platform }: { content: ProductContent; platf
 
   return (
     <div className="bg-black/30 rounded-xl border border-white/10 p-4">
-      <p className="text-gray-400 text-sm mb-3">📱 {platformInfo?.icon} {platformInfo?.label} 預覽</p>
+      <p className="text-gray-400 text-sm mb-3">📱 {platformInfo?.icon} {platformInfo?.label} {t('product.preview.label', { icon: '', name: '' }).trim()}</p>
       <div className={`${style.bg} rounded-xl overflow-hidden shadow-2xl`}>
         <div className="p-4">
           <div className="flex items-center gap-3 mb-3">
@@ -89,7 +90,7 @@ function PlatformPreview({ content, platform }: { content: ProductContent; platf
             </div>
             <div>
               <p className={`font-bold text-sm ${style.textClass}`}>Naratake</p>
-              <p className="text-xs text-white/60">剛剛</p>
+              <p className="text-xs text-white/60">{t('product.preview.now')}</p>
             </div>
           </div>
           <p className={`font-bold text-lg mb-2 ${style.textClass}`}>{content.title}</p>
@@ -108,7 +109,7 @@ function PlatformPreview({ content, platform }: { content: ProductContent; platf
         </div>
       </div>
       <p className="text-gray-500 text-xs mt-2 text-right">
-        {content.content.length + content.title.length} / {charLimit} 字元
+        {content.content.length + content.title.length} / {charLimit} {locale === 'zh-TW' ? '字元' : 'chars'}
       </p>
     </div>
   )
@@ -154,6 +155,7 @@ export default function ProductPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
+  const { t, locale } = useLanguage()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -175,11 +177,11 @@ export default function ProductPage() {
 
   const handleFileSelect = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) {
-      toast('請上傳圖片檔案', 'error')
+      toast(t('product.upload.error'), 'error')
       return
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast('檔案大小不能超過 10MB', 'error')
+      toast(t('product.upload.error.size'), 'error')
       return
     }
     setSelectedFile(file)
@@ -220,11 +222,11 @@ export default function ProductPage() {
 
   const handleAnalyze = async () => {
     if (!selectedFile) {
-      toast('請先選擇圖片', 'error')
+      toast(t('product.upload.no_image'), 'error')
       return
     }
     if (!user?.has_api_key) {
-      toast('請先在設定中新增 OpenAI API Key', 'error')
+      toast(t('product.analyze.no_key'), 'error')
       router.push('/settings')
       return
     }
@@ -246,32 +248,32 @@ export default function ProductPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.detail || '分析失敗')
+        throw new Error(data.detail || t('product.analyze.fail'))
       }
 
       const data = await res.json()
       setAnalysis(data)
-      toast('產品分析完成', 'success')
+      toast(t('product.analyze.done'), 'success')
     } catch (error: any) {
-      toast(error.message || '分析失敗', 'error')
+      toast(error.message || t('product.analyze.fail'), 'error')
     }
     setAnalyzing(false)
   }
 
   const handleGenerateContent = async (targetPlatforms?: string[]) => {
     if (!analysis) {
-      toast('請先分析產品圖片', 'error')
+      toast(t('product.gen.no_analysis'), 'error')
       return
     }
     if (!user?.has_api_key) {
-      toast('請先在設定中新增 OpenAI API Key', 'error')
+      toast(t('product.analyze.no_key'), 'error')
       router.push('/settings')
       return
     }
 
     const platformsToGenerate = targetPlatforms || selectedPlatforms
     if (platformsToGenerate.length === 0) {
-      toast('請至少選擇一個平台', 'error')
+      toast(t('product.gen.select_platform'), 'error')
       return
     }
 
@@ -290,9 +292,9 @@ export default function ProductPage() {
       setGeneratedContents(results)
       setGeneratedContent(results[platformsToGenerate[0]])
       setActivePreviewPlatform(platformsToGenerate[0])
-      toast(`已為 ${platformsToGenerate.length} 個平台生成內容`, 'success')
+      toast(t('product.gen.toast.success', { n: String(platformsToGenerate.length) }), 'success')
     } catch (error: any) {
-      toast(error.message || '生成失敗', 'error')
+      toast(error.message || t('product.gen.toast.fail'), 'error')
     }
     setGenerating(false)
   }
@@ -315,15 +317,15 @@ export default function ProductPage() {
     const text = `${c.title}\n\n${c.content}\n\n${c.hashtags.map(t => '#' + t).join(' ')}\n\n${c.cta}`
     navigator.clipboard.writeText(text)
     setCopied(true)
-    toast('已複製到剪貼簿', 'success')
+    toast(t('misc.toast.copied'), 'success')
     setTimeout(() => setCopied(false), 2000)
   }
 
   const copyAll = () => {
     if (!generatedContent) return
-    const text = `產品名稱: ${analysis?.name}\n\n${generatedContent.title}\n\n${generatedContent.content}\n\n${generatedContent.hashtags.map(t => '#' + t).join(' ')}\n\n${generatedContent.cta}`
+    const text = `${t('product.result.name')}: ${analysis?.name}\n\n${generatedContent.title}\n\n${generatedContent.content}\n\n${generatedContent.hashtags.map(t => '#' + t).join(' ')}\n\n${generatedContent.cta}`
     navigator.clipboard.writeText(text)
-    toast('已複製全部內容', 'success')
+    toast(t('misc.toast.copied'), 'success')
   }
 
   if (authLoading) {
@@ -343,15 +345,15 @@ export default function ProductPage() {
     <main className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <Header />
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-white mb-2">產品行銷助手</h1>
-        <p className="text-gray-400 mb-6">上傳產品圖片，讓 AI 幫你分析並生成行銷內容</p>
+        <h1 className="text-2xl font-bold text-white mb-2">{t('product.title')}</h1>
+        <p className="text-gray-400 mb-6">{t('product.desc')}</p>
 
         <StepIndicator currentStep={currentStep} />
 
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-              <h2 className="text-lg font-bold text-white mb-4">1. 上傳產品圖片</h2>
+              <h2 className="text-lg font-bold text-white mb-4">{t('product.upload.title')}</h2>
               <div
                 className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300 ${
                   isDragging
@@ -375,15 +377,15 @@ export default function ProductPage() {
                           <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full animate-pulse" />
                         </div>
                       </div>
-                      <p className="text-white mt-4 font-medium">AI 分析中...</p>
-                      <p className="text-gray-400 text-sm mt-1">正在辨識產品資訊</p>
+                      <p className="text-white mt-4 font-medium">{t('product.analyzing')}</p>
+                      <p className="text-gray-400 text-sm mt-1">{t('product.analyzing.desc')}</p>
                     </div>
                   </div>
                 ) : imagePreview ? (
                   <div className="relative group">
                     <img src={imagePreview} alt="Product" className="max-h-64 mx-auto rounded-lg" />
                     <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                      <p className="text-white text-sm">點擊更換圖片</p>
+                      <p className="text-white text-sm">{t('product.upload.click')}</p>
                     </div>
                   </div>
                 ) : (
@@ -392,9 +394,9 @@ export default function ProductPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     <p className={`text-lg font-medium ${isDragging ? 'text-purple-400' : ''}`}>
-                      {isDragging ? '放開以上傳檔案' : '點擊或拖拽上傳產品圖片'}
+                      {isDragging ? t('product.upload.drop') : t('product.upload.drag')}
                     </p>
-                    <p className="text-sm mt-2">支援 JPG, PNG, WebP（最大 10MB）</p>
+                    <p className="text-sm mt-2">{t('product.upload.supported')}</p>
                   </div>
                 )}
               </div>
@@ -434,24 +436,24 @@ export default function ProductPage() {
                 loading={analyzing}
                 className="w-full mt-4"
               >
-                {analyzing ? '分析中...' : '分析產品圖片'}
+                {analyzing ? t('product.analyze.loading') : t('product.analyze.btn')}
               </Button>
             </div>
 
             {analysis && (
               <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-                <h2 className="text-lg font-bold text-white mb-4">2. AI 分析結果</h2>
+                <h2 className="text-lg font-bold text-white mb-4">{t('product.result.title')}</h2>
                 <div className="space-y-4">
                   <div className="bg-white/5 rounded-lg p-4 border border-white/5">
-                    <span className="text-purple-400 font-medium text-sm">產品名稱</span>
+                    <span className="text-purple-400 font-medium text-sm">{t('product.result.name')}</span>
                     <p className="text-white font-bold text-lg mt-1">{analysis.name}</p>
                   </div>
                   <div className="bg-white/5 rounded-lg p-4 border border-white/5">
-                    <span className="text-purple-400 font-medium text-sm">產品描述</span>
+                    <span className="text-purple-400 font-medium text-sm">{t('product.result.desc')}</span>
                     <p className="text-white mt-1 leading-relaxed">{analysis.description}</p>
                   </div>
                   <div className="bg-white/5 rounded-lg p-4 border border-white/5">
-                    <span className="text-purple-400 font-medium text-sm">產品特色</span>
+                    <span className="text-purple-400 font-medium text-sm">{t('product.result.features')}</span>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {analysis.features.map((f, i) => (
                         <span key={i} className="px-3 py-1.5 bg-gradient-to-r from-purple-600/50 to-blue-600/50 text-white rounded-full text-sm border border-purple-400/30">
@@ -461,11 +463,11 @@ export default function ProductPage() {
                     </div>
                   </div>
                   <div className="bg-white/5 rounded-lg p-4 border border-white/5">
-                    <span className="text-purple-400 font-medium text-sm">目標受眾</span>
+                    <span className="text-purple-400 font-medium text-sm">{t('product.result.audience')}</span>
                     <p className="text-white mt-1">{analysis.target_audience}</p>
                   </div>
                   <div className="bg-white/5 rounded-lg p-4 border border-white/5">
-                    <span className="text-purple-400 font-medium text-sm">行銷建議</span>
+                    <span className="text-purple-400 font-medium text-sm">{t('product.result.suggestions')}</span>
                     <ul className="mt-2 space-y-2">
                       {analysis.marketing_suggestions.map((s, i) => (
                         <li key={i} className="flex items-start gap-2 text-white">
@@ -483,10 +485,10 @@ export default function ProductPage() {
           <div className="space-y-6">
             {analysis && (
               <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-                <h2 className="text-lg font-bold text-white mb-4">3. 生成行銷內容</h2>
+                <h2 className="text-lg font-bold text-white mb-4">{t('product.gen.title')}</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-white mb-3">目標平台（可多選）</label>
+                    <label className="block text-white mb-3">{t('product.gen.platform')}</label>
                     <div className="grid grid-cols-2 gap-2">
                       {platforms.map(p => {
                         const isSelected = selectedPlatforms.includes(p.value)
@@ -520,18 +522,18 @@ export default function ProductPage() {
                       })}
                     </div>
                   </div>
-                  <Select label="內容風格" value={style} onChange={e => setStyle(e.target.value)}>
+                  <Select label={t('product.gen.style')} value={style} onChange={e => setStyle(e.target.value)}>
                     {styles.map(s => (
                       <option key={s.value} value={s.value} className="text-gray-900">{s.label}</option>
                     ))}
                   </Select>
                   <div className="flex gap-2">
                     <Button onClick={() => handleGenerateContent()} loading={generating} className="flex-1">
-                      {generating ? '生成中...' : `生成 ${selectedPlatforms.length} 個平台`}
+                      {generating ? t('product.gen.loading') : t('product.gen.btn', { n: String(selectedPlatforms.length) })}
                     </Button>
                     {Object.keys(generatedContents).length > 0 && (
                       <Button onClick={handleRegenerate} loading={generating} variant="secondary">
-                        🔄 重新生成
+                        🔄 {t('product.gen.retry')}
                       </Button>
                     )}
                   </div>
@@ -542,7 +544,7 @@ export default function ProductPage() {
             {Object.keys(generatedContents).length > 0 && (
               <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/10">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-white">4. 生成結果</h2>
+                  <h2 className="text-lg font-bold text-white">{t('product.content.title')}</h2>
                   <div className="flex gap-1">
                     {Object.keys(generatedContents).map(p => {
                       const info = platforms.find(pl => pl.value === p)
@@ -570,11 +572,11 @@ export default function ProductPage() {
 
                 <div className="mt-4 space-y-3">
                   <div className="bg-white/5 rounded-lg p-4 border border-white/5">
-                    <span className="text-purple-400 font-medium text-sm">標題</span>
+                    <span className="text-purple-400 font-medium text-sm">{t('product.content.field.title')}</span>
                     <p className="text-white text-lg font-bold mt-1">{generatedContent!.title}</p>
                   </div>
                   <div className="bg-white/5 rounded-lg p-4 border border-white/5">
-                    <span className="text-purple-400 font-medium text-sm">內容</span>
+                    <span className="text-purple-400 font-medium text-sm">{t('product.content.field.content')}</span>
                     <p className="text-white whitespace-pre-wrap mt-1 leading-relaxed">{generatedContent!.content}</p>
                   </div>
                   <div className="bg-white/5 rounded-lg p-4 border border-white/5">
@@ -588,17 +590,17 @@ export default function ProductPage() {
                     </div>
                   </div>
                   <div className="bg-white/5 rounded-lg p-4 border border-white/5">
-                    <span className="text-purple-400 font-medium text-sm">行動呼籲</span>
+                    <span className="text-purple-400 font-medium text-sm">{t('product.content.field.cta')}</span>
                     <p className="text-white font-bold mt-1">{generatedContent!.cta}</p>
                   </div>
                 </div>
 
                 <div className="flex gap-2 mt-4">
                   <Button onClick={() => copyContent()} variant="secondary" className="flex-1">
-                    {copied ? '✓ 已複製' : '📋 複製內容'}
+                    {copied ? t('product.content.copied') : `📋 ${t('product.content.copy')}`}
                   </Button>
                   <Button onClick={copyAll} variant="secondary" className="flex-1">
-                    📋 複製全部
+                    📋 {t('product.content.copy_all')}
                   </Button>
                 </div>
               </div>
