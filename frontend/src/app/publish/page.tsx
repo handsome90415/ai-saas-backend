@@ -27,16 +27,6 @@ interface PlatformDef {
   brandColorLight: string
 }
 
-const platforms: PlatformDef[] = [
-  { id: 'instagram', name: 'Instagram', brandColor: '#E4405F', brandGradient: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', brandColorLight: 'rgba(228,64,95,0.2)' },
-  { id: 'facebook', name: 'Facebook', brandColor: '#1877F2', brandGradient: 'linear-gradient(135deg, #1877F2, #42a5f5)', brandColorLight: 'rgba(24,119,242,0.2)' },
-  { id: 'twitter', name: 'Twitter/X', brandColor: '#000000', brandGradient: 'linear-gradient(135deg, #000000, #333333)', brandColorLight: 'rgba(255,255,255,0.1)' },
-  { id: 'linkedin', name: 'LinkedIn', brandColor: '#0A66C2', brandGradient: 'linear-gradient(135deg, #0A66C2, #0077B5)', brandColorLight: 'rgba(10,102,194,0.2)' },
-  { id: 'tiktok', name: 'TikTok', brandColor: '#010101', brandGradient: 'linear-gradient(135deg, #010101, #25F4EE, #FE2C55)', brandColorLight: 'rgba(255,255,255,0.08)' },
-  { id: 'youtube', name: 'YouTube', brandColor: '#FF0000', brandGradient: 'linear-gradient(135deg, #FF0000, #CC0000)', brandColorLight: 'rgba(255,0,0,0.2)' },
-  { id: 'blog', name: '部落格', brandColor: '#F59E0B', brandGradient: 'linear-gradient(135deg, #F59E0B, #D97706)', brandColorLight: 'rgba(245,158,11,0.2)' },
-]
-
 function PlatformIcon({ platformId, size = 24 }: { platformId: string; size?: number }) {
   const s = size
   const id = `icon-${platformId}-${Math.random().toString(36).slice(2,6)}`
@@ -102,29 +92,27 @@ function PlatformIcon({ platformId, size = 24 }: { platformId: string; size?: nu
   }
 }
 
-const styles = [
-  { id: 'professional', name: '專業正式', icon: '🏢', color: 'from-blue-500 to-cyan-500' },
-  { id: 'casual', name: '輕鬆休閒', icon: '☕', color: 'from-amber-500 to-orange-500' },
-  { id: 'creative', name: '創意吸睛', icon: '🎨', color: 'from-purple-500 to-pink-500' },
-  { id: 'humorous', name: '幽默風趣', icon: '😄', color: 'from-green-500 to-emerald-500' },
-  { id: 'persuasive', name: '說服力強', icon: '🎯', color: 'from-red-500 to-rose-500' },
-  { id: 'luxury', name: '奢華高端', icon: '💎', color: 'from-yellow-500 to-amber-500' },
-  { id: 'emotional', name: '情感共鳴', icon: '❤️', color: 'from-pink-500 to-rose-500' },
-  { id: 'urgent', name: '緊迫感', icon: '⚡', color: 'from-orange-500 to-red-500' },
-  { id: 'storytelling', name: '故事敘述', icon: '📖', color: 'from-indigo-500 to-blue-500' },
-  { id: 'trendy', name: '潮流網紅', icon: '🔥', color: 'from-fuchsia-500 to-pink-500' },
-]
-
-const lengths = [
-  { id: 'short', name: '簡短', desc: '50-100 字' },
-  { id: 'medium', name: '中等', desc: '150-250 字' },
-  { id: 'long', name: '詳細', desc: '300-500 字' },
-]
+const styleIds = ['professional','casual','creative','humorous','persuasive','luxury','emotional','urgent','storytelling','trendy'] as const
+const lengthIds = ['short','medium','long'] as const
 
 export default function PublishPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const { toast } = useToast()
   const { t, locale } = useLanguage()
+
+  const platforms: PlatformDef[] = [
+    { id: 'instagram', name: 'Instagram', brandColor: '#E4405F', brandGradient: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', brandColorLight: 'rgba(228,64,95,0.2)' },
+    { id: 'facebook', name: 'Facebook', brandColor: '#1877F2', brandGradient: 'linear-gradient(135deg, #1877F2, #42a5f5)', brandColorLight: 'rgba(24,119,242,0.2)' },
+    { id: 'twitter', name: 'Twitter/X', brandColor: '#000000', brandGradient: 'linear-gradient(135deg, #000000, #333333)', brandColorLight: 'rgba(255,255,255,0.1)' },
+    { id: 'linkedin', name: 'LinkedIn', brandColor: '#0A66C2', brandGradient: 'linear-gradient(135deg, #0A66C2, #0077B5)', brandColorLight: 'rgba(10,102,194,0.2)' },
+    { id: 'tiktok', name: 'TikTok', brandColor: '#010101', brandGradient: 'linear-gradient(135deg, #010101, #25F4EE, #FE2C55)', brandColorLight: 'rgba(255,255,255,0.08)' },
+    { id: 'youtube', name: 'YouTube', brandColor: '#FF0000', brandGradient: 'linear-gradient(135deg, #FF0000, #CC0000)', brandColorLight: 'rgba(255,0,0,0.2)' },
+    { id: 'blog', name: 'Blog', brandColor: '#F59E0B', brandGradient: 'linear-gradient(135deg, #F59E0B, #D97706)', brandColorLight: 'rgba(245,158,11,0.2)' },
+  ]
+
+  const styles = styleIds.map(id => ({ id, name: t(`style.${id}` as any), icon: ['🏢','☕','🎨','😄','🎯','💎','❤️','⚡','📖','🔥'][styleIds.indexOf(id)] }))
+
+  const lengths = lengthIds.map(id => ({ id, name: t(`length.${id}` as any), desc: { short: '50-100', medium: '150-250', long: '300-500' }[id] + (locale === 'zh-TW' ? ' 字' : ' words') }))
 
   const [prompt, setPrompt] = useState('')
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['instagram', 'facebook'])
@@ -167,7 +155,7 @@ export default function PublishPage() {
   }, [prompt, selectedStyle, selectedLength])
 
   const generateAll = async () => {
-    if (!prompt.trim()) { toast('請輸入產品或主題描述', 'error'); return }
+    if (!prompt.trim()) { toast(t('publish.toast.input_empty'), 'error'); return }
     if (selectedPlatforms.length === 0) { toast(t('publish.toast.select_platform'), 'error'); return }
     if (!user?.has_api_key) { toast(t('publish.toast.no_key'), 'error'); return }
 
@@ -224,7 +212,7 @@ export default function PublishPage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a'); a.href = url; a.download = `content-${Date.now()}.${ext}`; a.click()
     URL.revokeObjectURL(url)
-    toast(`已下載 ${ext.toUpperCase()} 檔案`, 'success')
+    toast(t('publish.toast.downloaded', { ext: ext.toUpperCase() }), 'success')
   }
 
   const doneCount = contents.filter(c => c.status === 'done').length
@@ -372,7 +360,7 @@ export default function PublishPage() {
               {generating ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  生成中...
+                  {t('publish.gen.loading')}
                 </span>
               ) : (
                 `🚀 ${t('publish.generate', { n: selectedPlatforms.length })}`
@@ -457,7 +445,7 @@ export default function PublishPage() {
                           <div>
                             <span className="text-white font-black text-lg">{platform?.name}</span>
                             {content.status === 'done' && (
-                              <span className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded-full text-white/80">已完成</span>
+                              <span className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded-full text-white/80">{t('publish.completed')}</span>
                             )}
                           </div>
                         </div>
@@ -481,7 +469,7 @@ export default function PublishPage() {
                           {content.status === 'generating' && (
                             <div className="flex items-center gap-2 text-white/80">
                               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              <span className="text-sm font-medium">生成中...</span>
+                               <span className="text-sm font-medium">{t('publish.gen.loading')}</span>
                             </div>
                           )}
                           {content.status === 'error' && (
@@ -556,7 +544,7 @@ function PlatformPreview({ platform, title, content, hashtags }: { platform: Pla
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1">
-                <span className="text-black font-bold text-sm">你的品牌</span>
+                <span className="text-black font-bold text-sm">{t('publish.brand')}</span>
                 <span className="text-gray-500 text-sm">@brand · 1m</span>
               </div>
               <p className="text-gray-900 text-sm whitespace-pre-wrap mt-1 leading-relaxed">{title ? `${title}\n\n${content}` : content}</p>
@@ -585,7 +573,7 @@ function PlatformPreview({ platform, title, content, hashtags }: { platform: Pla
           <PlatformIcon platformId={platform.id} size={22} />
         </div>
         <div>
-          <p className="text-white font-bold text-sm">你的品牌</p>
+          <p className="text-white font-bold text-sm">{t('publish.brand')}</p>
           <p className="text-white/60 text-xs">sponsored</p>
         </div>
       </div>
@@ -605,12 +593,12 @@ function PlatformPreview({ platform, title, content, hashtags }: { platform: Pla
       </div>
       {/* Footer */}
       <div className="px-4 py-2.5 border-t border-gray-100 flex items-center gap-6 text-gray-400 text-xs">
-        {platform.id === 'instagram' && <><span>❤️ 讚</span><span>💬 留言</span><span>📤 分享</span></>}
-        {platform.id === 'facebook' && <><span>👍 讚</span><span>💬 留言</span><span>📤 分享</span></>}
-        {platform.id === 'linkedin' && <><span>👍 讚</span><span>💬 留言</span><span>🔄 轉發</span></>}
-        {platform.id === 'tiktok' && <><span>❤️ 讚</span><span>💬 留言</span><span>🔖 收藏</span></>}
-        {platform.id === 'youtube' && <><span>👍 讚</span><span>👎 不喜歡</span><span>💬 留言</span><span>📤 分享</span></>}
-        {platform.id === 'blog' && <><span>👍 讚</span><span>💬 留言</span><span>🔖 收藏</span></>}
+        {platform.id === 'instagram' && <><span>❤️ {t('publish.action.like')}</span><span>💬 {t('publish.action.comment')}</span><span>📤 {t('publish.action.share')}</span></>}
+        {platform.id === 'facebook' && <><span>👍 {t('publish.action.like')}</span><span>💬 {t('publish.action.comment')}</span><span>📤 {t('publish.action.share')}</span></>}
+        {platform.id === 'linkedin' && <><span>👍 {t('publish.action.like')}</span><span>💬 {t('publish.action.comment')}</span><span>🔄 {t('publish.action.repost')}</span></>}
+        {platform.id === 'tiktok' && <><span>❤️ {t('publish.action.like')}</span><span>💬 {t('publish.action.comment')}</span><span>🔖 {t('publish.action.bookmark')}</span></>}
+        {platform.id === 'youtube' && <><span>👍 {t('publish.action.like')}</span><span>👎 {t('publish.action.dislike')}</span><span>💬 {t('publish.action.comment')}</span><span>📤 {t('publish.action.share')}</span></>}
+        {platform.id === 'blog' && <><span>👍 {t('publish.action.like')}</span><span>💬 {t('publish.action.comment')}</span><span>🔖 {t('publish.action.bookmark')}</span></>}
       </div>
     </div>
   )
