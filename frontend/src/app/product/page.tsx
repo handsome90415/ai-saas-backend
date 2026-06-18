@@ -37,15 +37,6 @@ const platforms = [
   { value: 'blog', label: 'Blog', icon: '📝' },
 ]
 
-const styles = [
-  { value: 'professional', label: t('style.professional') },
-  { value: 'casual', label: t('style.casual') },
-  { value: 'creative', label: t('style.creative') },
-  { value: 'humorous', label: t('style.humorous') },
-]
-
-const steps = [t('product.step.upload'), t('product.step.analyze'), t('product.step.generate'), t('product.step.preview')]
-
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + ' B'
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
@@ -157,6 +148,15 @@ export default function ProductPage() {
   const { toast } = useToast()
   const { t, locale } = useLanguage()
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const styles = [
+    { value: 'professional', label: t('style.professional') },
+    { value: 'casual', label: t('style.casual') },
+    { value: 'creative', label: t('style.creative') },
+    { value: 'humorous', label: t('style.humorous') },
+  ]
+
+  const steps = [t('product.step.upload'), t('product.step.analyze'), t('product.step.generate'), t('product.step.preview')]
 
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
