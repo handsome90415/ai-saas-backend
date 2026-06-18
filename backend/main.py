@@ -664,8 +664,8 @@ async def billing_status(
     import datetime as _dt
 
     plan_info = PLANS.get(user.plan, PLANS["free"])
-    now = _dt.datetime.now(_dt.timezone.utc)
-    month_start = _dt.datetime(now.year, now.month, 1, tzinfo=_dt.timezone.utc)
+    now = _dt.datetime.now()
+    month_start = _dt.datetime(now.year, now.month, 1)
 
     text_result = await db.execute(
         select(func.count(UsageRecord.id)).where(
