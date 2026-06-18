@@ -56,6 +56,36 @@ class UsageRecord(Base):
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Auto-migrate: add missing columns to existing tables
+        await conn.run_sync(_add_missing_columns)
+
+
+def _add_missing_columns(conn):
+    """Add columns that exist in the model but not in the database."""
+    from sqlalchemy import inspect, text
+    inspector = inspect(conn)
+    for table_name, table in Base.metadata.tables.items():
+        if not inspector.has_table(table_name):
+            continue
+        existing_cols = {c['name'] for c in inspector.get_columns(table_name)}
+        for col in table.columns:
+            if col.name not in existing_cols:
+                col_type = conn.dialect.type_compiler.process(col.type)
+                nullable = "NULL" if col.nullable else "NOT NULL"
+                default = ""
+                if col.default is not None:
+                    default_val = col.default.arg
+                    if callable(default_val):
+                        default_val = default_val()
+                    default = f" DEFAULT '{default_val}'"
+                elif col.nullable:
+                    default = " DEFAULT NULL"
+                try:
+                    conn.execute(text(
+                        f'ALTER TABLE {table_name} ADD COLUMN {col.name} {col_type} {nullable}{default}'
+                    ))
+                except Exception:
+                    pass  # Column may already exist or type mismatch
 
 
 async def get_db():
