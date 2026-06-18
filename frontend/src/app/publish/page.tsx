@@ -111,7 +111,8 @@ export default function PublishPage() {
   ]
 
   const styleColors: Record<string, string> = { professional: 'from-blue-500 to-cyan-500', casual: 'from-amber-500 to-orange-500', creative: 'from-purple-500 to-pink-500', humorous: 'from-green-500 to-emerald-500', persuasive: 'from-red-500 to-rose-500', luxury: 'from-yellow-500 to-amber-500', emotional: 'from-pink-500 to-rose-500', urgent: 'from-orange-500 to-red-500', storytelling: 'from-indigo-500 to-blue-500', trendy: 'from-fuchsia-500 to-pink-500' }
-  const styles = styleIds.map(id => ({ id, name: t(`style.${id}` as any), icon: ['🏢','☕','🎨','😄','🎯','💎','❤️','⚡','📖','🔥'][styleIds.indexOf(id)], color: styleColors[id] }))
+  const styleIcons: Record<string, string> = { professional: '💼', casual: '☕', creative: '🎨', humorous: '😂', persuasive: '🧲', luxury: '👑', emotional: '💗', urgent: '🔥', storytelling: '📜', trendy: '💫' }
+  const styles = styleIds.map(id => ({ id, name: t(`style.${id}` as any), icon: styleIcons[id], color: styleColors[id] }))
 
   const lengths = lengthIds.map(id => ({ id, name: t(`length.${id}` as any), desc: { short: '50-100', medium: '150-250', long: '300-500' }[id] + (locale === 'zh-TW' ? ' 字' : ' words') }))
 
