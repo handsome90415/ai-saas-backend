@@ -19,7 +19,7 @@ def get_price_id(plan: str) -> str:
     raise ValueError(f"Unknown plan: {plan}")
 
 
-def create_checkout_session(customer_id: str, price_id: str, success_url: str, cancel_url: str):
+def create_checkout_session(customer_id: str, price_id: str, success_url: str, cancel_url: str, metadata: dict | None = None):
     return stripe.checkout.Session.create(
         customer=customer_id,
         payment_method_types=["card"],
@@ -27,6 +27,7 @@ def create_checkout_session(customer_id: str, price_id: str, success_url: str, c
         mode="subscription",
         success_url=success_url,
         cancel_url=cancel_url,
+        metadata=metadata or {},
     )
 
 

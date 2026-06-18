@@ -2,14 +2,31 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useToast } from '@/contexts/ToastContext'
+import { apiPost } from '@/lib/api'
 
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [loading, setLoading] = useState<string | null>(null)
   const { t } = useLanguage()
+  const { toast } = useToast()
+  const router = useRouter()
+
+  const handleCheckout = async (plan: string) => {
+    setLoading(plan)
+    try {
+      const data = await apiPost<{ checkout_url: string }>('/api/billing/create-checkout-session', { plan })
+      window.location.href = data.checkout_url
+    } catch (error: any) {
+      toast(error.message || 'Error', 'error')
+      setLoading(null)
+    }
+  }
 
   const plans = [
     { id: 'free', name: t('pricing.free'), price: '$0', period: '/mo', desc: t('pricing.free.desc'),
@@ -87,13 +104,21 @@ export default function PricingPage() {
                   ))}
                 </ul>
                 {plan.id === 'enterprise' ? (
-                  <a href="mailto:contact@naratake.com" className={`block w-full py-3 rounded-xl font-black text-center transition-all duration-200 bg-white/10 text-white hover:bg-white/20 border border-white/20`}>
+                  <a href="mailto:contact@naratake.com" className="block w-full py-3 rounded-xl font-black text-center transition-all duration-200 bg-white/10 text-white hover:bg-white/20 border border-white/20">
                     {plan.cta}
                   </a>
-                ) : (
-                  <Link href="/signup" className={`block w-full py-3 rounded-xl font-black text-center transition-all duration-200 ${plan.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400 shadow-lg shadow-purple-500/25' : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'}`}>
+                ) : plan.id === 'free' ? (
+                  <Link href="/signup" className={`block w-full py-3 rounded-xl font-black text-center transition-all duration-200 bg-white/10 text-white hover:bg-white/20 border border-white/20`}>
                     {plan.cta}
                   </Link>
+                ) : (
+                  <button
+                    onClick={() => handleCheckout(plan.id)}
+                    disabled={loading !== null}
+                    className={`block w-full py-3 rounded-xl font-black text-center transition-all duration-200 disabled:opacity-50 ${plan.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400 shadow-lg shadow-purple-500/25' : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'}`}
+                  >
+                    {loading === plan.id ? '...' : plan.cta}
+                  </button>
                 )}
               </div>
             </div>

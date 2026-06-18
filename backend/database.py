@@ -30,6 +30,7 @@ class User(Base):
     preferred_provider: Mapped[str] = mapped_column(String, default="openai")
     stripe_customer_id: Mapped[str | None] = mapped_column(String, nullable=True)
     stripe_subscription_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    subscription_status: Mapped[str] = mapped_column(String, default="inactive")
     created_at: Mapped[str] = mapped_column(DateTime, server_default=func.now())
 
 

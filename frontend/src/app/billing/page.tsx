@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 
 interface BillingStatus {
   plan: string
+  subscription_status: string
   text_usage: number
   text_limit: number
   image_usage: number
@@ -29,11 +30,20 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true)
 
   const planNames: Record<string, string> = { free: t('pricing.free'), pro: t('pricing.pro'), business: t('pricing.business'), enterprise: t('pricing.enterprise') }
+  const statusLabels: Record<string, string> = {
+    active: locale === 'zh-TW' ? '啟用中' : 'Active',
+    trialing: locale === 'zh-TW' ? '試用中' : 'Trialing',
+    past_due: locale === 'zh-TW' ? '付款逾期' : 'Past Due',
+    canceled: locale === 'zh-TW' ? '已取消' : 'Canceled',
+    unpaid: locale === 'zh-TW' ? '未付款' : 'Unpaid',
+    inactive: locale === 'zh-TW' ? '未啟用' : 'Inactive',
+  }
 
   useEffect(() => { if (!authLoading && !isAuthenticated) router.push('/login') }, [authLoading, isAuthenticated, router])
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') toast(locale === 'zh-TW' ? '付款成功！' : 'Payment successful!', 'success')
+    if (searchParams.get('canceled') === 'true') toast(locale === 'zh-TW' ? '已取消付款' : 'Checkout canceled', 'info')
   }, [searchParams, toast, locale])
 
   const fetchStatus = async () => {
@@ -46,7 +56,7 @@ export default function BillingPage() {
   useEffect(() => { if (isAuthenticated) fetchStatus() }, [isAuthenticated])
 
   const handleUpgrade = async (plan: string) => {
-    try { const data = await apiPost<{ checkout_url: string }>('/api/billing/checkout', { plan }); window.location.href = data.checkout_url }
+    try { const data = await apiPost<{ checkout_url: string }>('/api/billing/create-checkout-session', { plan }); window.location.href = data.checkout_url }
     catch (error: any) { toast(error.message || 'Error', 'error') }
   }
 
@@ -70,7 +80,18 @@ export default function BillingPage() {
           <div className="max-w-2xl space-y-6">
             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/10">
               <h2 className="text-xl font-bold text-white mb-4">{t('billing.current')}</h2>
-              <p className="text-3xl font-bold text-purple-400 mb-4">{planNames[status.plan] || status.plan}</p>
+              <div className="flex items-center gap-3 mb-4">
+                <p className="text-3xl font-bold text-purple-400">{planNames[status.plan] || status.plan}</p>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                  status.subscription_status === 'active' || status.subscription_status === 'trialing'
+                    ? 'bg-green-500/20 text-green-300'
+                    : status.subscription_status === 'past_due'
+                    ? 'bg-yellow-500/20 text-yellow-300'
+                    : 'bg-gray-500/20 text-gray-400'
+                }`}>
+                  {statusLabels[status.subscription_status] || status.subscription_status}
+                </span>
+              </div>
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-sm text-gray-300 mb-1"><span>{t('billing.text_usage')}</span><span>{status.text_usage} / {status.text_limit === -1 ? '∞' : status.text_limit}</span></div>

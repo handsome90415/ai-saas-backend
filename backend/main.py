@@ -621,13 +621,14 @@ class CheckoutRequest(BaseModel):
 
 class BillingStatusResponse(BaseModel):
     plan: str
+    subscription_status: str
     text_usage: int
     text_limit: int
     image_usage: int
     image_limit: int
 
 
-@app.post("/api/billing/checkout")
+@app.post("/api/billing/create-checkout-session")
 async def create_checkout(
     req: CheckoutRequest,
     user: User = Depends(get_current_user),
@@ -645,12 +646,14 @@ async def create_checkout(
         customer = create_customer(email=user.email, name=user.name)
         user.stripe_customer_id = customer.id
         await db.commit()
+        await db.refresh(user)
 
     session = create_checkout_session(
         customer_id=user.stripe_customer_id,
         price_id=price_id,
         success_url=f"{NEXT_PUBLIC_APP_URL}/billing?success=true",
-        cancel_url=f"{NEXT_PUBLIC_APP_URL}/pricing",
+        cancel_url=f"{NEXT_PUBLIC_APP_URL}/pricing?canceled=true",
+        metadata={"user_id": user.id, "plan": req.plan},
     )
     return {"checkout_url": session.url}
 
@@ -665,6 +668,7 @@ async def billing_status(
     info = await get_usage_info(user, db)
     return BillingStatusResponse(
         plan=user.plan,
+        subscription_status=getattr(user, 'subscription_status', 'inactive'),
         text_usage=info["text_usage"],
         text_limit=info["text_limit"],
         image_usage=info["image_usage"],
@@ -721,9 +725,10 @@ async def stripe_webhook(
             if user:
                 user.plan = plan
                 user.stripe_subscription_id = subscription_id
+                user.subscription_status = stripe_sub.get("status", "active")
                 await db.commit()
 
-    elif event["type"] == "customer.subscription.updated":
+    elif event["type"] in ("customer.subscription.created", "customer.subscription.updated"):
         subscription = event["data"]["object"]
         customer_id = subscription.get("customer")
         status = subscription.get("status")
@@ -731,7 +736,7 @@ async def stripe_webhook(
             result = await db.execute(select(User).where(User.stripe_customer_id == customer_id))
             user = result.scalar_one_or_none()
             if user:
-                if status == "active":
+                if status in ("active", "trialing"):
                     items = subscription.get("items", {}).get("data", [])
                     if items:
                         price_id = items[0].get("price", {}).get("id")
@@ -741,6 +746,7 @@ async def stripe_webhook(
                             user.plan = "pro"
                 elif status in ("past_due", "canceled", "unpaid"):
                     user.plan = "free"
+                user.subscription_status = status
                 await db.commit()
 
     elif event["type"] == "customer.subscription.deleted":
@@ -751,6 +757,7 @@ async def stripe_webhook(
             user = result.scalar_one_or_none()
             if user:
                 user.plan = "free"
+                user.subscription_status = "canceled"
                 await db.commit()
 
     elif event["type"] == "invoice.payment_failed":
@@ -761,6 +768,7 @@ async def stripe_webhook(
             user = result.scalar_one_or_none()
             if user:
                 user.plan = "free"
+                user.subscription_status = "past_due"
                 await db.commit()
 
     return {"received": True}

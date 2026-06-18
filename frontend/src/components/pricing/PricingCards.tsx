@@ -1,10 +1,26 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useToast } from '@/contexts/ToastContext'
+import { apiPost } from '@/lib/api'
 
 export function PricingCards() {
   const { t } = useLanguage()
+  const { toast } = useToast()
+  const [loading, setLoading] = useState<string | null>(null)
+
+  const handleCheckout = async (plan: string) => {
+    setLoading(plan)
+    try {
+      const data = await apiPost<{ checkout_url: string }>('/api/billing/create-checkout-session', { plan })
+      window.location.href = data.checkout_url
+    } catch (error: any) {
+      toast(error.message || 'Error', 'error')
+      setLoading(null)
+    }
+  }
 
   const plans = [
     {
@@ -22,7 +38,6 @@ export function PricingCards() {
       badge: t('pricing.popular'),
       features: ['200 ' + t('gen.text'), '20 ' + t('gen.image'), '3 ' + t('pricing.c.platform'), t('pricing.f.advanced')],
       button: t('pricing.cta.pro'),
-      href: '/signup',
       featured: true,
     },
     {
@@ -31,7 +46,6 @@ export function PricingCards() {
       period: '/mo',
       features: ['800 ' + t('gen.text'), '60 ' + t('gen.image'), t('pricing.f.allplatform'), t('pricing.f.batch'), t('pricing.f.priority')],
       button: t('pricing.cta.business'),
-      href: '/signup',
       featured: false,
     },
     {
@@ -70,16 +84,30 @@ export function PricingCards() {
               <li key={f} className="text-sm">{f}</li>
             ))}
           </ul>
-          <Link
-            href={plan.href}
-            className={`block w-full py-3 text-center rounded-lg transition ${
-              plan.featured
-                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
-                : 'border border-white/30 text-white hover:bg-white/10'
-            }`}
-          >
-            {plan.button}
-          </Link>
+          {plan.href ? (
+            <Link
+              href={plan.href}
+              className={`block w-full py-3 text-center rounded-lg transition ${
+                plan.featured
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
+                  : 'border border-white/30 text-white hover:bg-white/10'
+              }`}
+            >
+              {plan.button}
+            </Link>
+          ) : (
+            <button
+              onClick={() => handleCheckout(plan.name === t('pricing.pro') ? 'pro' : 'business')}
+              disabled={loading !== null}
+              className={`block w-full py-3 text-center rounded-lg transition disabled:opacity-50 ${
+                plan.featured
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
+                  : 'border border-white/30 text-white hover:bg-white/10'
+              }`}
+            >
+              {loading !== null ? '...' : plan.button}
+            </button>
+          )}
         </div>
       ))}
     </div>
