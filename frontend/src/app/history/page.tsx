@@ -93,6 +93,27 @@ export default function HistoryPage() {
     toast(locale === 'zh-TW' ? '已下載 TXT 檔案' : 'TXT downloaded', 'success')
   }, [toast, locale])
 
+  const downloadImage = useCallback((gen: Generation) => {
+    const url = gen.result?.image_url
+    if (!url) return
+    const a = document.createElement('a')
+    if (url.startsWith('data:')) {
+      const byteString = atob(url.split(',')[1])
+      const mimeString = url.split(',')[0].split(':')[1].split(';')[0]
+      const ab = new ArrayBuffer(byteString.length)
+      const ia = new Uint8Array(ab)
+      for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i)
+      const blob = new Blob([ab], { type: mimeString })
+      a.href = URL.createObjectURL(blob)
+    } else {
+      a.href = url
+    }
+    a.download = `${gen.type}-${Date.now()}.png`
+    a.click()
+    if (a.href.startsWith('blob:')) URL.revokeObjectURL(a.href)
+    toast(locale === 'zh-TW' ? '已下載圖片' : 'Image downloaded', 'success')
+  }, [toast, locale])
+
   const typeLabel = (type: string) => t(`history.${type}` as any) || type
   const totalPages = Math.ceil(total / limit)
 
@@ -155,6 +176,9 @@ export default function HistoryPage() {
                       )}
                     </div>
                     <div className="flex gap-2 mt-4 pt-3 border-t border-white/10">
+                      {(gen.type === 'image' || gen.type === 'product_image') && gen.result?.image_url && (
+                        <button onClick={() => downloadImage(gen)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition">{t('misc.download')}</button>
+                      )}
                       <button onClick={() => copyContent(gen)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition">
                         {copiedId === gen.id ? t('publish.copied') : t('history.copy')}
                       </button>

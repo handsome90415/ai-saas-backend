@@ -13,14 +13,17 @@ export default function PricingPage() {
 
   const plans = [
     { id: 'free', name: t('pricing.free'), price: '$0', period: '/mo', desc: t('pricing.free.desc'),
-      features: [t('pricing.f.10text'), t('pricing.f.5image'), t('pricing.f.3platform'), t('pricing.f.7days'), t('pricing.f.advanced'), t('pricing.f.api'), t('pricing.f.dedicated')],
-      included: [true, true, true, true, false, false, false], cta: t('pricing.cta.free'), popular: false },
+      features: [t('pricing.f.5text'), t('pricing.f.3image'), t('pricing.f.1platform'), t('pricing.f.7days'), t('pricing.f.basic'), t('pricing.f.no_export')],
+      included: [true, true, true, true, true, true], cta: t('pricing.cta.free'), popular: false },
     { id: 'pro', name: t('pricing.pro'), price: '$9.99', period: '/mo', annualPrice: '$99/yr', desc: t('pricing.pro.desc'),
-      features: [t('pricing.f.unlimited_text'), t('pricing.f.100image'), t('pricing.f.advanced'), t('pricing.f.allplatform'), t('pricing.f.forever'), t('pricing.f.export'), t('pricing.f.priority'), t('pricing.f.api')],
-      included: [true, true, true, true, true, true, true, false], cta: t('pricing.cta.pro'), popular: true },
-    { id: 'enterprise', name: t('pricing.enterprise'), price: '$29.99', period: '/mo', annualPrice: '$299/yr', desc: t('pricing.enterprise.desc'),
-      features: [t('pricing.f.unlimited_text'), t('pricing.f.infimage'), t('pricing.f.advanced'), t('pricing.f.allplatform'), t('pricing.f.forever'), t('pricing.f.export'), t('pricing.f.api'), t('pricing.f.dedicated')],
-      included: [true, true, true, true, true, true, true, true], cta: t('pricing.cta.enterprise'), popular: false },
+      features: [t('pricing.f.200text'), t('pricing.f.20image'), t('pricing.f.3platform'), t('pricing.f.30days'), t('pricing.f.advanced'), t('pricing.f.export_txt')],
+      included: [true, true, true, true, true, true], cta: t('pricing.cta.pro'), popular: true },
+    { id: 'business', name: t('pricing.business'), price: '$19.99', period: '/mo', annualPrice: '$199/yr', desc: t('pricing.business.desc'),
+      features: [t('pricing.f.800text'), t('pricing.f.60image'), t('pricing.f.allplatform'), t('pricing.f.forever'), t('pricing.f.advanced'), t('pricing.f.export_both'), t('pricing.f.brand'), t('pricing.f.batch'), t('pricing.f.priority')],
+      included: [true, true, true, true, true, true, true, true, true], cta: t('pricing.cta.business'), popular: false },
+    { id: 'enterprise', name: t('pricing.enterprise'), price: 'Custom', period: '', desc: t('pricing.enterprise.desc'),
+      features: [t('pricing.f.custom_limits'), t('pricing.f.team'), t('pricing.f.api'), t('pricing.f.dedicated'), t('pricing.f.integration')],
+      included: [true, true, true, true, true], cta: t('pricing.cta.enterprise'), popular: false },
   ]
 
   const faqs = [
@@ -33,15 +36,14 @@ export default function PricingPage() {
   ]
 
   const compareRows = [
-    [t('pricing.c.text_gen'), '10/mo', t('pricing.c.unlimited'), t('pricing.c.unlimited')],
-    [t('pricing.c.image_gen'), '5/mo', '100/mo', t('pricing.c.unlimited')],
-    [t('pricing.c.platform'), '3', '✓', '✓'],
-    [t('pricing.c.provider'), '—', 'OpenAI/Gemini/Claude', 'OpenAI/Gemini/Claude'],
-    [t('pricing.c.model'), '—', '✓', '✓'],
-    [t('pricing.c.history'), '7d', t('pricing.c.forever'), t('pricing.c.forever')],
-    [t('pricing.c.export_fmt'), '—', 'TXT/JSON', 'TXT/JSON'],
-    [t('pricing.c.api'), '—', '—', '✓'],
-    [t('pricing.c.support'), '—', t('pricing.c.priority'), t('pricing.c.one_on_one')],
+    [t('pricing.c.text_gen'), '5/mo', '200/mo', '800/mo', t('pricing.f.custom_limits')],
+    [t('pricing.c.image_gen'), '3/mo', '20/mo', '60/mo', t('pricing.f.custom_limits')],
+    [t('pricing.c.platform'), '1', '3', t('pricing.f.allplatform'), t('pricing.f.allplatform')],
+    [t('pricing.c.history'), '7d', '30d', t('pricing.f.forever'), t('pricing.f.forever')],
+    [t('pricing.c.export_fmt'), '—', 'TXT', 'TXT / JSON', 'TXT / JSON'],
+    [t('pricing.c.templates'), t('pricing.f.basic'), t('pricing.f.advanced'), t('pricing.f.advanced'), t('pricing.f.advanced')],
+    [t('pricing.c.api'), '—', '—', '—', '✓'],
+    [t('pricing.c.support'), '—', '—', t('pricing.f.priority'), t('pricing.f.dedicated')],
   ]
 
   return (
@@ -60,33 +62,39 @@ export default function PricingPage() {
         </div>
       </section>
       <section className="container mx-auto px-4 pb-20">
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto items-start">
+        <div className="grid md:grid-cols-4 gap-4 max-w-7xl mx-auto items-start">
           {plans.map(plan => (
             <div key={plan.id} className={`relative rounded-2xl border-2 ${plan.popular ? 'border-purple-500/50 bg-white/10 shadow-xl shadow-purple-500/10' : 'border-white/10 bg-white/5'} overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl`}>
               {plan.popular && <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-center py-1.5 text-sm font-black">{t('pricing.popular')}</div>}
-              <div className="p-8">
+              <div className="p-6">
                 <h3 className="text-xl font-black text-white mb-1">{plan.name}</h3>
-                <p className="text-gray-400 text-sm mb-6">{plan.desc}</p>
-                <div className="mb-6">
-                  <span className="text-5xl font-black text-white">{plan.price}</span>
-                  <span className="text-gray-400 text-lg">{plan.period}</span>
+                <p className="text-gray-400 text-xs mb-4">{plan.desc}</p>
+                <div className="mb-4">
+                  <span className="text-4xl font-black text-white">{plan.price}</span>
+                  {plan.period && <span className="text-gray-400 text-lg">{plan.period}</span>}
                   {annual && plan.annualPrice && <div className="mt-1"><span className="text-sm text-gray-400">Annual </span><span className="text-lg font-bold text-green-400">{plan.annualPrice}</span></div>}
                 </div>
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-2 mb-6">
                   {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2.5">
+                    <li key={i} className="flex items-start gap-2">
                       {plan.included[i] ? (
-                        <svg className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        <svg className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                       ) : (
-                        <svg className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        <svg className="w-4 h-4 text-gray-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       )}
-                      <span className={`text-sm ${plan.included[i] ? 'text-gray-200' : 'text-gray-600'}`}>{f}</span>
+                      <span className={`text-xs ${plan.included[i] ? 'text-gray-200' : 'text-gray-600'}`}>{f}</span>
                     </li>
                   ))}
                 </ul>
-                <Link href="/signup" className={`block w-full py-3.5 rounded-xl font-black text-center transition-all duration-200 ${plan.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400 shadow-lg shadow-purple-500/25' : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'}`}>
-                  {plan.cta}
-                </Link>
+                {plan.id === 'enterprise' ? (
+                  <a href="mailto:contact@naratake.com" className={`block w-full py-3 rounded-xl font-black text-center transition-all duration-200 bg-white/10 text-white hover:bg-white/20 border border-white/20`}>
+                    {plan.cta}
+                  </a>
+                ) : (
+                  <Link href="/signup" className={`block w-full py-3 rounded-xl font-black text-center transition-all duration-200 ${plan.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400 shadow-lg shadow-purple-500/25' : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'}`}>
+                    {plan.cta}
+                  </Link>
+                )}
               </div>
             </div>
           ))}
@@ -94,21 +102,23 @@ export default function PricingPage() {
       </section>
       <section className="container mx-auto px-4 pb-20">
         <h2 className="text-3xl font-black text-white text-center mb-12">{t('pricing.compare')}</h2>
-        <div className="max-w-4xl mx-auto overflow-x-auto">
+        <div className="max-w-5xl mx-auto overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="border-b border-white/10">
-              <th className="text-left py-4 px-4 text-gray-400 font-medium">{t('pricing.c.feature')}</th>
-              <th className="text-center py-4 px-4 text-white font-bold">{t('pricing.free')}</th>
-              <th className="text-center py-4 px-4 text-purple-400 font-bold">{t('pricing.pro')}</th>
-              <th className="text-center py-4 px-4 text-orange-400 font-bold">{t('pricing.enterprise')}</th>
+              <th className="text-left py-4 px-3 text-gray-400 font-medium">{t('pricing.c.feature')}</th>
+              <th className="text-center py-4 px-3 text-white font-bold">{t('pricing.free')}</th>
+              <th className="text-center py-4 px-3 text-purple-400 font-bold">{t('pricing.pro')}</th>
+              <th className="text-center py-4 px-3 text-blue-400 font-bold">{t('pricing.business')}</th>
+              <th className="text-center py-4 px-3 text-orange-400 font-bold">{t('pricing.enterprise')}</th>
             </tr></thead>
             <tbody className="text-gray-300">
-              {compareRows.map(([feature, free, pro, enterprise], i) => (
+              {compareRows.map(([feature, free, pro, biz, ent], i) => (
                 <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition">
-                  <td className="py-3.5 px-4 text-white font-medium">{feature}</td>
-                  <td className="py-3.5 px-4 text-center">{free}</td>
-                  <td className="py-3.5 px-4 text-center text-purple-300">{pro}</td>
-                  <td className="py-3.5 px-4 text-center text-orange-300">{enterprise}</td>
+                  <td className="py-3 px-3 text-white font-medium text-xs">{feature}</td>
+                  <td className="py-3 px-3 text-center text-xs">{free}</td>
+                  <td className="py-3 px-3 text-center text-purple-300 text-xs">{pro}</td>
+                  <td className="py-3 px-3 text-center text-blue-300 text-xs">{biz}</td>
+                  <td className="py-3 px-3 text-center text-orange-300 text-xs">{ent}</td>
                 </tr>
               ))}
             </tbody>

@@ -32,3 +32,34 @@ async def check_usage_limit(user: User, usage_type: str, db: AsyncSession):
             status_code=403,
             detail=f"本月{type_label}生成次數已達上限（{current_usage}/{limit}）。請升級方案以繼續使用。",
         )
+
+
+async def get_usage_info(user: User, db: AsyncSession) -> dict:
+    """Get current month usage counts for the user."""
+    from stripe_service import PLANS
+
+    plan_info = PLANS.get(user.plan, PLANS["free"])
+    now = datetime.datetime.now()
+    month_start = datetime.datetime(now.year, now.month, 1)
+
+    text_result = await db.execute(
+        select(func.count(UsageRecord.id)).where(
+            UsageRecord.user_id == user.id,
+            UsageRecord.type == "text",
+            UsageRecord.created_at >= month_start,
+        )
+    )
+    image_result = await db.execute(
+        select(func.count(UsageRecord.id)).where(
+            UsageRecord.user_id == user.id,
+            UsageRecord.type == "image",
+            UsageRecord.created_at >= month_start,
+        )
+    )
+
+    return {
+        "text_usage": text_result.scalar() or 0,
+        "text_limit": plan_info["text_limit"],
+        "image_usage": image_result.scalar() or 0,
+        "image_limit": plan_info["image_limit"],
+    }

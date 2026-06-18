@@ -28,7 +28,7 @@ export default function BillingPage() {
   const [status, setStatus] = useState<BillingStatus | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const planNames: Record<string, string> = { free: t('pricing.free'), pro: t('pricing.pro'), enterprise: t('pricing.enterprise') }
+  const planNames: Record<string, string> = { free: t('pricing.free'), pro: t('pricing.pro'), business: t('pricing.business'), enterprise: t('pricing.enterprise') }
 
   useEffect(() => { if (!authLoading && !isAuthenticated) router.push('/login') }, [authLoading, isAuthenticated, router])
 
@@ -82,9 +82,10 @@ export default function BillingPage() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-3">
-              {status.plan === 'free' && (<><Button onClick={() => handleUpgrade('pro')}>{t('billing.upgrade_pro')}</Button><Button variant="secondary" onClick={() => handleUpgrade('enterprise')}>{t('billing.upgrade_enterprise')}</Button></>)}
-              {status.plan === 'pro' && (<><Button onClick={() => handleUpgrade('enterprise')}>{t('pricing.cta.enterprise')}</Button><Button variant="secondary" onClick={handlePortal}>{t('billing.manage')}</Button></>)}
+            <div className="flex gap-3 flex-wrap">
+              {status.plan === 'free' && (<><Button onClick={() => handleUpgrade('pro')}>{t('billing.upgrade_pro')}</Button><Button variant="secondary" onClick={() => handleUpgrade('business')}>{t('billing.upgrade_business')}</Button></>)}
+              {status.plan === 'pro' && (<><Button onClick={() => handleUpgrade('business')}>{t('billing.upgrade_business')}</Button><Button variant="secondary" onClick={handlePortal}>{t('billing.manage')}</Button></>)}
+              {status.plan === 'business' && <Button variant="secondary" onClick={handlePortal}>{t('billing.manage')}</Button>}
               {status.plan === 'enterprise' && <Button variant="secondary" onClick={handlePortal}>{t('billing.manage')}</Button>}
             </div>
           </div>

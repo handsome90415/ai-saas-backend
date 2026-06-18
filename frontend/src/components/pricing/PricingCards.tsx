@@ -10,7 +10,7 @@ export function PricingCards() {
     {
       name: t('pricing.free'),
       price: '$0',
-      features: ['10 ' + (t('gen.text')), '5 ' + (t('gen.image'))],
+      features: ['5 ' + t('gen.text'), '3 ' + t('gen.image'), t('pricing.f.1platform')],
       button: t('pricing.cta.free'),
       href: '/signup',
       featured: false,
@@ -20,28 +20,36 @@ export function PricingCards() {
       price: '$9.99',
       period: '/mo',
       badge: t('pricing.popular'),
-      features: [t('pricing.features.unlimited'), t('pricing.features.images.100'), t('pricing.features.templates'), t('pricing.features.priority')],
+      features: ['200 ' + t('gen.text'), '20 ' + t('gen.image'), '3 ' + t('pricing.c.platform'), t('pricing.f.advanced')],
       button: t('pricing.cta.pro'),
       href: '/signup',
       featured: true,
     },
     {
-      name: t('pricing.enterprise'),
-      price: '$29.99',
+      name: t('pricing.business'),
+      price: '$19.99',
       period: '/mo',
-      features: [t('pricing.features.unlimited'), t('pricing.features.images.inf'), t('pricing.features.api'), t('pricing.features.dedicated')],
-      button: t('pricing.cta.enterprise'),
+      features: ['800 ' + t('gen.text'), '60 ' + t('gen.image'), t('pricing.f.allplatform'), t('pricing.f.batch'), t('pricing.f.priority')],
+      button: t('pricing.cta.business'),
       href: '/signup',
+      featured: false,
+    },
+    {
+      name: t('pricing.enterprise'),
+      price: 'Custom',
+      features: [t('pricing.f.custom_limits'), t('pricing.f.team'), t('pricing.f.api'), t('pricing.f.dedicated')],
+      button: t('pricing.cta.enterprise'),
+      href: 'mailto:contact@naratake.com',
       featured: false,
     },
   ]
 
   return (
-    <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+    <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
       {plans.map(plan => (
         <div
           key={plan.name}
-          className={`backdrop-blur rounded-xl p-8 ${
+          className={`backdrop-blur rounded-xl p-6 ${
             plan.featured
               ? 'bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-2 border-purple-400 relative'
               : 'bg-white/5 border border-white/10'
@@ -53,13 +61,13 @@ export function PricingCards() {
             </span>
           )}
           <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-          <p className="text-4xl font-bold text-white mb-4">
+          <p className="text-3xl font-bold text-white mb-4">
             {plan.price}
             {plan.period && <span className="text-lg">{plan.period}</span>}
           </p>
-          <ul className="space-y-3 text-gray-300 mb-8">
+          <ul className="space-y-2 text-gray-300 mb-6">
             {plan.features.map(f => (
-              <li key={f}>{f}</li>
+              <li key={f} className="text-sm">{f}</li>
             ))}
           </ul>
           <Link

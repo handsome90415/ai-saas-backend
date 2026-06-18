@@ -617,7 +617,7 @@ async def delete_generation(
 # ── Billing ──────────────────────────────────────────
 
 class CheckoutRequest(BaseModel):
-    plan: str  # "pro" or "enterprise"
+    plan: str  # "pro" or "business"
 
 class BillingStatusResponse(BaseModel):
     plan: str
@@ -633,7 +633,7 @@ async def create_checkout(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if req.plan not in ("pro", "enterprise"):
+    if req.plan not in ("pro", "business"):
         raise HTTPException(status_code=400, detail="無效的方案")
 
     from stripe_service import get_price_id, create_checkout_session, create_customer
@@ -660,34 +660,15 @@ async def billing_status(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    from stripe_service import PLANS
-    import datetime as _dt
+    from usage import get_usage_info
 
-    plan_info = PLANS.get(user.plan, PLANS["free"])
-    now = _dt.datetime.now()
-    month_start = _dt.datetime(now.year, now.month, 1)
-
-    text_result = await db.execute(
-        select(func.count(UsageRecord.id)).where(
-            UsageRecord.user_id == user.id,
-            UsageRecord.type == "text",
-            UsageRecord.created_at >= month_start,
-        )
-    )
-    image_result = await db.execute(
-        select(func.count(UsageRecord.id)).where(
-            UsageRecord.user_id == user.id,
-            UsageRecord.type == "image",
-            UsageRecord.created_at >= month_start,
-        )
-    )
-
+    info = await get_usage_info(user, db)
     return BillingStatusResponse(
         plan=user.plan,
-        text_usage=text_result.scalar() or 0,
-        text_limit=plan_info["text_limit"],
-        image_usage=image_result.scalar() or 0,
-        image_limit=plan_info["image_limit"],
+        text_usage=info["text_usage"],
+        text_limit=info["text_limit"],
+        image_usage=info["image_usage"],
+        image_limit=info["image_limit"],
     )
 
 
@@ -712,7 +693,7 @@ async def stripe_webhook(
     db: AsyncSession = Depends(get_db),
 ):
     import stripe
-    from config import STRIPE_WEBHOOK_SECRET, STRIPE_ENTERPRISE_PRICE_ID
+    from config import STRIPE_WEBHOOK_SECRET, STRIPE_BUSINESS_PRICE_ID
     from stripe_service import PLANS
 
     payload = await request.body()
@@ -730,11 +711,15 @@ async def stripe_webhook(
         session = event["data"]["object"]
         customer_id = session.get("customer")
         subscription_id = session.get("subscription")
-        if customer_id:
+        if customer_id and subscription_id:
+            stripe_sub = stripe.Subscription.retrieve(subscription_id)
+            items = stripe_sub.get("items", {}).get("data", [])
+            price_id = items[0].get("price", {}).get("id") if items else ""
+            plan = "business" if price_id == STRIPE_BUSINESS_PRICE_ID else "pro"
             result = await db.execute(select(User).where(User.stripe_customer_id == customer_id))
             user = result.scalar_one_or_none()
             if user:
-                user.plan = "pro"
+                user.plan = plan
                 user.stripe_subscription_id = subscription_id
                 await db.commit()
 
@@ -750,8 +735,8 @@ async def stripe_webhook(
                     items = subscription.get("items", {}).get("data", [])
                     if items:
                         price_id = items[0].get("price", {}).get("id")
-                        if price_id == STRIPE_ENTERPRISE_PRICE_ID:
-                            user.plan = "enterprise"
+                        if price_id == STRIPE_BUSINESS_PRICE_ID:
+                            user.plan = "business"
                         else:
                             user.plan = "pro"
                 elif status in ("past_due", "canceled", "unpaid"):
