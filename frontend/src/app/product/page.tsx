@@ -107,7 +107,7 @@ function PlatformPreview({ content, platform }: { content: ProductContent; platf
   )
 }
 
-function StepIndicator({ currentStep }: { currentStep: number }) {
+function StepIndicator({ currentStep, steps }: { currentStep: number; steps: string[] }) {
   return (
     <div className="flex items-center justify-between mb-6">
       {steps.map((step, i) => {
@@ -349,7 +349,7 @@ export default function ProductPage() {
         <h1 className="text-2xl font-bold text-white mb-2">{t('product.title')}</h1>
         <p className="text-gray-400 mb-6">{t('product.desc')}</p>
 
-        <StepIndicator currentStep={currentStep} />
+        <StepIndicator currentStep={currentStep} steps={steps} />
 
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="space-y-6">
