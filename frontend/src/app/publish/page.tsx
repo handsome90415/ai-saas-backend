@@ -168,8 +168,8 @@ export default function PublishPage() {
 
   const generateAll = async () => {
     if (!prompt.trim()) { toast('請輸入產品或主題描述', 'error'); return }
-    if (selectedPlatforms.length === 0) { toast('請至少選擇一個平台', 'error'); return }
-    if (!user?.has_api_key) { toast('請先在設定中新增 API Key', 'error'); return }
+    if (selectedPlatforms.length === 0) { toast(t('publish.toast.select_platform'), 'error'); return }
+    if (!user?.has_api_key) { toast(t('publish.toast.no_key'), 'error'); return }
 
     setGenerating(true)
     setContents(selectedPlatforms.map(platform => ({
@@ -180,7 +180,7 @@ export default function PublishPage() {
       selectedPlatforms.map((platform, index) => generateForPlatform(platform, index))
     )
     const successCount = results.filter(r => r.status === 'fulfilled').length
-    if (successCount > 0) toast(`已為 ${successCount} 個平台生成內容`, 'success')
+    if (successCount > 0) toast(t('publish.toast.success', { n: String(successCount) }), 'success')
     setGenerating(false)
   }
 
@@ -189,8 +189,8 @@ export default function PublishPage() {
     if (index === -1) return
     try {
       await generateForPlatform(platform, index)
-      toast(`已重新生成`, 'success')
-    } catch { toast('重新生成失敗', 'error') }
+      toast(t('publish.toast.regenerate'), 'success')
+    } catch { toast(t('publish.toast.regenerate.fail'), 'error') }
   }
 
   const formatContent = (c: PlatformContent) => {
@@ -201,14 +201,14 @@ export default function PublishPage() {
   const copyContent = (index: number) => {
     navigator.clipboard.writeText(formatContent(contents[index]))
     setCopiedIndex(index)
-    toast('已複製到剪貼簿', 'success')
+    toast(t('publish.toast.copy'), 'success')
     setTimeout(() => setCopiedIndex(null), 2000)
   }
 
   const copyAll = () => {
     const all = contents.filter(c => c.status === 'done').map(formatContent).join('\n\n---\n\n')
     navigator.clipboard.writeText(all)
-    toast('已複製全部內容', 'success')
+    toast(t('publish.toast.copy_all'), 'success')
   }
 
   const downloadAs = (ext: string) => {

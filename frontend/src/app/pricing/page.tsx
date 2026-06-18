@@ -6,197 +6,85 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { useLanguage } from '@/contexts/LanguageContext'
 
-const plans = [
-  {
-    id: 'free',
-    name: '免費版',
-    price: '$0',
-    period: '/月',
-    description: '適合個人體驗與輕度使用',
-    color: 'from-gray-500 to-gray-600',
-    borderColor: 'border-white/10',
-    features: [
-      { text: '每月 10 次文案生成', included: true },
-      { text: '每月 5 次圖片生成', included: true },
-      { text: '基本模板', included: true },
-      { text: '多平台發布（3 個平台）', included: true },
-      { text: '歷史記錄保存 7 天', included: true },
-      { text: '進階模板庫', included: false },
-      { text: 'API 存取', included: false },
-      { text: '專屬客服', included: false },
-    ],
-    cta: '免費開始',
-    ctaHref: '/signup',
-    popular: false,
-  },
-  {
-    id: 'pro',
-    name: '專業版',
-    price: '$9.99',
-    period: '/月',
-    annualPrice: '$99/年',
-    annualSave: '省 17%',
-    description: '適合個人創作者與自由工作者',
-    color: 'from-purple-500 to-pink-500',
-    borderColor: 'border-purple-500/50',
-    features: [
-      { text: '無限文案生成', included: true },
-      { text: '每月 100 次圖片生成', included: true },
-      { text: '進階模板庫', included: true },
-      { text: '多平台發布（全部平台）', included: true },
-      { text: '歷史記錄永久保存', included: true },
-      { text: '匯出 TXT / JSON', included: true },
-      { text: '優先客服', included: true },
-      { text: 'API 存取', included: false },
-    ],
-    cta: '立即訂閱',
-    ctaHref: '/signup',
-    popular: true,
-  },
-  {
-    id: 'enterprise',
-    name: '企業版',
-    price: '$29.99',
-    period: '/月',
-    annualPrice: '$299/年',
-    annualSave: '省 17%',
-    description: '適合團隊與企業級需求',
-    color: 'from-orange-500 to-red-500',
-    borderColor: 'border-orange-500/30',
-    features: [
-      { text: '無限文案生成', included: true },
-      { text: '無限圖片生成', included: true },
-      { text: '進階模板庫', included: true },
-      { text: '多平台發布（全部平台）', included: true },
-      { text: '歷史記錄永久保存', included: true },
-      { text: '匯出 TXT / JSON', included: true },
-      { text: 'API 存取', included: true },
-      { text: '專屬客服', included: true },
-    ],
-    cta: '聯絡我們',
-    ctaHref: '/signup',
-    popular: false,
-  },
-]
-
-const faqs = [
-  {
-    q: '免費版有什麼限制？',
-    a: '免費版每月可生成 10 次文案和 5 次圖片，歷史記錄保留 7 天。無需信用卡即可開始使用。',
-  },
-  {
-    q: '可以隨時取消訂閱嗎？',
-    a: '是的，你可以隨時在帳戶設定中取消訂閱。取消後，你的方案會在目前計費週期結束時生效。',
-  },
-  {
-    q: '圖片生成使用什麼模型？',
-    a: '我們支援 DALL-E 3（OpenAI）等多種圖片生成模型。你也可以在設定中使用自己的 API Key。',
-  },
-  {
-    q: '企業版有什麼額外功能？',
-    a: '企業版提供 API 存取、無限生成次數、專屬客服支援，以及自訂模板和批量生成功能。',
-  },
-  {
-    q: '付款方式有哪些？',
-    a: '我們支援所有主要信用卡和金融卡。年繳方案可享 17% 折扣。',
-  },
-  {
-    q: '可以升級或降級方案嗎？',
-    a: '可以。升級立即生效，降級會在目前計費週期結束時生效。',
-  },
-]
-
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
-  const { t, locale } = useLanguage()
+  const { t } = useLanguage()
+
+  const plans = [
+    { id: 'free', name: t('pricing.free'), price: '$0', period: '/mo', desc: t('pricing.free.desc'),
+      features: [t('pricing.f.10text'), t('pricing.f.5image'), t('pricing.f.3platform'), t('pricing.f.7days'), t('pricing.f.advanced'), t('pricing.f.api'), t('pricing.f.dedicated')],
+      included: [true, true, true, true, false, false, false], cta: t('pricing.cta.free'), popular: false },
+    { id: 'pro', name: t('pricing.pro'), price: '$9.99', period: '/mo', annualPrice: '$99/yr', desc: t('pricing.pro.desc'),
+      features: [t('pricing.f.unlimited_text'), t('pricing.f.100image'), t('pricing.f.advanced'), t('pricing.f.allplatform'), t('pricing.f.forever'), t('pricing.f.export'), t('pricing.f.priority'), t('pricing.f.api')],
+      included: [true, true, true, true, true, true, true, false], cta: t('pricing.cta.pro'), popular: true },
+    { id: 'enterprise', name: t('pricing.enterprise'), price: '$29.99', period: '/mo', annualPrice: '$299/yr', desc: t('pricing.enterprise.desc'),
+      features: [t('pricing.f.unlimited_text'), t('pricing.f.infimage'), t('pricing.f.advanced'), t('pricing.f.allplatform'), t('pricing.f.forever'), t('pricing.f.export'), t('pricing.f.api'), t('pricing.f.dedicated')],
+      included: [true, true, true, true, true, true, true, true], cta: t('pricing.cta.enterprise'), popular: false },
+  ]
+
+  const faqs = [
+    { q: t('pricing.faq.1.q'), a: t('pricing.faq.1.a') },
+    { q: t('pricing.faq.2.q'), a: t('pricing.faq.2.a') },
+    { q: t('pricing.faq.3.q'), a: t('pricing.faq.3.a') },
+    { q: t('pricing.faq.4.q'), a: t('pricing.faq.4.a') },
+    { q: t('pricing.faq.5.q'), a: t('pricing.faq.5.a') },
+    { q: t('pricing.faq.6.q'), a: t('pricing.faq.6.a') },
+  ]
+
+  const compareRows = [
+    [t('pricing.c.text_gen'), '10/mo', t('pricing.c.unlimited'), t('pricing.c.unlimited')],
+    [t('pricing.c.image_gen'), '5/mo', '100/mo', t('pricing.c.unlimited')],
+    [t('pricing.c.platform'), '3', '✓', '✓'],
+    [t('pricing.c.provider'), '—', 'OpenAI/Gemini/Claude', 'OpenAI/Gemini/Claude'],
+    [t('pricing.c.model'), '—', '✓', '✓'],
+    [t('pricing.c.history'), '7d', t('pricing.c.forever'), t('pricing.c.forever')],
+    [t('pricing.c.export_fmt'), '—', 'TXT/JSON', 'TXT/JSON'],
+    [t('pricing.c.api'), '—', '—', '✓'],
+    [t('pricing.c.support'), '—', t('pricing.c.priority'), t('pricing.c.one_on_one')],
+  ]
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e]">
       <Header />
-
-      {/* Hero */}
       <section className="container mx-auto px-4 pt-16 pb-8 text-center">
-        <span className="inline-block px-4 py-1.5 bg-purple-500/20 text-purple-300 rounded-full text-sm font-bold mb-6">定價方案</span>
-        <h1 className="text-5xl font-black text-white mb-4">
-          {t('pricing.title')}
-        </h1>
-        <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-8">
-          {t('pricing.subtitle')}
-        </p>
-
-        {/* Billing Toggle */}
+        <span className="inline-block px-4 py-1.5 bg-purple-500/20 text-purple-300 rounded-full text-sm font-bold mb-6">Pricing</span>
+        <h1 className="text-5xl font-black text-white mb-4">{t('pricing.title')}</h1>
+        <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-8">{t('pricing.subtitle')}</p>
         <div className="flex items-center justify-center gap-3 mb-12">
           <span className={`text-sm font-medium ${!annual ? 'text-white' : 'text-gray-500'}`}>{t('pricing.monthly')}</span>
-          <button
-            onClick={() => setAnnual(!annual)}
-            className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${annual ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-white/20'}`}
-          >
+          <button onClick={() => setAnnual(!annual)} className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${annual ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-white/20'}`}>
             <div className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-lg transition-transform duration-300 ${annual ? 'translate-x-7' : 'translate-x-0.5'}`} />
           </button>
-          <span className={`text-sm font-medium ${annual ? 'text-white' : 'text-gray-500'}`}>
-            {t('pricing.annual')} <span className="text-green-400 text-xs font-bold">{t('pricing.save')}</span>
-          </span>
+          <span className={`text-sm font-medium ${annual ? 'text-white' : 'text-gray-500'}`}>{t('pricing.annual')} <span className="text-green-400 text-xs font-bold">{t('pricing.save')}</span></span>
         </div>
       </section>
-
-      {/* Plans */}
       <section className="container mx-auto px-4 pb-20">
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto items-start">
           {plans.map(plan => (
-            <div
-              key={plan.id}
-              className={`relative rounded-2xl border-2 ${plan.borderColor} overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl ${
-                plan.popular ? 'bg-white/10 shadow-xl shadow-purple-500/10' : 'bg-white/5'
-              }`}
-            >
-              {plan.popular && (
-                <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-center py-1.5 text-sm font-black">
-                  ⭐ {t('pricing.popular')}
-                </div>
-              )}
-
+            <div key={plan.id} className={`relative rounded-2xl border-2 ${plan.popular ? 'border-purple-500/50 bg-white/10 shadow-xl shadow-purple-500/10' : 'border-white/10 bg-white/5'} overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl`}>
+              {plan.popular && <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-center py-1.5 text-sm font-black">{t('pricing.popular')}</div>}
               <div className="p-8">
                 <h3 className="text-xl font-black text-white mb-1">{plan.name}</h3>
-                <p className="text-gray-400 text-sm mb-6">{plan.description}</p>
-
+                <p className="text-gray-400 text-sm mb-6">{plan.desc}</p>
                 <div className="mb-6">
                   <span className="text-5xl font-black text-white">{plan.price}</span>
                   <span className="text-gray-400 text-lg">{plan.period}</span>
-                  {annual && plan.annualPrice && (
-                    <div className="mt-1">
-                      <span className="text-sm text-gray-400">年繳 </span>
-                      <span className="text-lg font-bold text-green-400">{plan.annualPrice}</span>
-                      <span className="ml-2 text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">{plan.annualSave}</span>
-                    </div>
-                  )}
+                  {annual && plan.annualPrice && <div className="mt-1"><span className="text-sm text-gray-400">Annual </span><span className="text-lg font-bold text-green-400">{plan.annualPrice}</span></div>}
                 </div>
-
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((f, i) => (
                     <li key={i} className="flex items-start gap-2.5">
-                      {f.included ? (
-                        <svg className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                      {plan.included[i] ? (
+                        <svg className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                       ) : (
-                        <svg className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <svg className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       )}
-                      <span className={`text-sm ${f.included ? 'text-gray-200' : 'text-gray-600'}`}>{f.text}</span>
+                      <span className={`text-sm ${plan.included[i] ? 'text-gray-200' : 'text-gray-600'}`}>{f}</span>
                     </li>
                   ))}
                 </ul>
-
-                <Link
-                  href={plan.ctaHref}
-                  className={`block w-full py-3.5 rounded-xl font-black text-center transition-all duration-200 ${
-                    plan.popular
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400 shadow-lg shadow-purple-500/25'
-                      : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
-                  }`}
-                >
+                <Link href="/signup" className={`block w-full py-3.5 rounded-xl font-black text-center transition-all duration-200 ${plan.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400 shadow-lg shadow-purple-500/25' : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'}`}>
                   {plan.cta}
                 </Link>
               </div>
@@ -204,32 +92,18 @@ export default function PricingPage() {
           ))}
         </div>
       </section>
-
-      {/* Feature Comparison */}
       <section className="container mx-auto px-4 pb-20">
         <h2 className="text-3xl font-black text-white text-center mb-12">{t('pricing.compare')}</h2>
         <div className="max-w-4xl mx-auto overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-4 px-4 text-gray-400 font-medium">功能</th>
-                <th className="text-center py-4 px-4 text-white font-bold">免費版</th>
-                <th className="text-center py-4 px-4 text-purple-400 font-bold">專業版</th>
-                <th className="text-center py-4 px-4 text-orange-400 font-bold">企業版</th>
-              </tr>
-            </thead>
+            <thead><tr className="border-b border-white/10">
+              <th className="text-left py-4 px-4 text-gray-400 font-medium">{t('pricing.c.feature')}</th>
+              <th className="text-center py-4 px-4 text-white font-bold">{t('pricing.free')}</th>
+              <th className="text-center py-4 px-4 text-purple-400 font-bold">{t('pricing.pro')}</th>
+              <th className="text-center py-4 px-4 text-orange-400 font-bold">{t('pricing.enterprise')}</th>
+            </tr></thead>
             <tbody className="text-gray-300">
-              {[
-                ['文案生成', '10 次/月', '無限', '無限'],
-                ['圖片生成', '5 次/月', '100 次/月', '無限'],
-                ['多平台發布', '3 個平台', '全部平台', '全部平台'],
-                ['AI 供應商', '—', 'OpenAI / Gemini / Claude', 'OpenAI / Gemini / Claude'],
-                ['模型選擇', '—', '自選模型', '自選模型'],
-                ['歷史記錄', '7 天', '永久', '永久'],
-                ['匯出格式', '—', 'TXT / JSON', 'TXT / JSON'],
-                ['API 存取', '—', '—', '✓'],
-                ['專屬客服', '—', '優先', '1 對 1'],
-              ].map(([feature, free, pro, enterprise], i) => (
+              {compareRows.map(([feature, free, pro, enterprise], i) => (
                 <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition">
                   <td className="py-3.5 px-4 text-white font-medium">{feature}</td>
                   <td className="py-3.5 px-4 text-center">{free}</td>
@@ -241,50 +115,28 @@ export default function PricingPage() {
           </table>
         </div>
       </section>
-
-      {/* FAQ */}
       <section className="container mx-auto px-4 pb-20">
         <h2 className="text-3xl font-black text-white text-center mb-4">{t('pricing.faq')}</h2>
         <p className="text-gray-400 text-center mb-12">{t('pricing.faq.desc')}</p>
         <div className="max-w-3xl mx-auto space-y-3">
           {faqs.map((faq, i) => (
             <div key={i} className="bg-white/5 backdrop-blur rounded-xl border border-white/10 overflow-hidden">
-              <button
-                onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="w-full flex items-center justify-between p-5 text-left"
-              >
+              <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-5 text-left">
                 <span className="text-white font-bold">{faq.q}</span>
-                <svg
-                  className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`}
-                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <svg className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
-              {openFaq === i && (
-                <div className="px-5 pb-5 text-gray-400 text-sm leading-relaxed">
-                  {faq.a}
-                </div>
-              )}
+              {openFaq === i && <div className="px-5 pb-5 text-gray-400 text-sm leading-relaxed">{faq.a}</div>}
             </div>
           ))}
         </div>
       </section>
-
-      {/* CTA */}
       <section className="container mx-auto px-4 pb-20">
         <div className="max-w-3xl mx-auto text-center bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 rounded-2xl p-12 border border-white/10">
           <h2 className="text-3xl font-black text-white mb-4">{t('pricing.cta.ready')}</h2>
           <p className="text-gray-400 mb-8">{t('pricing.cta.desc')}</p>
-          <Link
-            href="/signup"
-            className="inline-block px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-black rounded-xl hover:from-purple-400 hover:to-pink-400 transition-all shadow-lg shadow-purple-500/25"
-          >
-            {t('pricing.cta.start')}
-          </Link>
+          <Link href="/signup" className="inline-block px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-black rounded-xl hover:from-purple-400 hover:to-pink-400 transition-all shadow-lg shadow-purple-500/25">{t('pricing.cta.start')}</Link>
         </div>
       </section>
-
       <Footer />
     </main>
   )

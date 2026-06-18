@@ -99,7 +99,7 @@ export default function SettingsPage() {
   const handleSaveModel = async () => {
     try {
       await apiPut('/api/auth/model', { provider: selectedProvider, model: customModel })
-      toast('模型設定已儲存', 'success'); refreshUser()
+      toast(t('settings.toast.saved'), 'success'); refreshUser()
     } catch (error: any) { toast(error.message || '儲存失敗', 'error') }
   }
 
@@ -111,7 +111,7 @@ export default function SettingsPage() {
 
   const handleSetPreferred = async (provider: string) => {
     try { await apiPut('/api/auth/preferred-provider', { provider }); toast('已設為預設 AI 供應商', 'success'); refreshUser() }
-    catch (error: any) { toast(error.message || '設定失敗', 'error') }
+    catch (error: any) { toast(error.message || t('settings.toast.save_fail'), 'error') }
   }
 
   const getKeyStatus = (provider: string) => {
